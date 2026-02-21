@@ -253,12 +253,23 @@ def parse_sms(sms_body: str, sender_id: str = '') -> ParsedSMS:
         'transferred to your', 'received from'
     ])
 
-    # Avoid false positives like "credit card debit"
+    # Resolve conflicts: "debited...and credited to a/c" is a DEBIT (UPI send)
+    # Only mark as credit if "credited to your a/c" — meaning money came TO the user
     if is_credit and is_debit:
-        # Context-sensitive resolution: if "credited" appears, prefer credit
-        if 'credited' in sms_lower:
+        # "credited to your" / "credit in your" → money arrived (credit)
+        # "debited" + "credited to a/c" → money sent (debit)
+        credit_to_user = any(p in sms_lower for p in [
+            'credited to your', 'credit to your', 'credit in your',
+            'deposited to your', 'received in your', 'added to your'
+        ])
+        debit_from_user = 'debited' in sms_lower
+        if debit_from_user and not credit_to_user:
+            # "debited" is always about the user's account losing money
+            is_credit = False
+        elif credit_to_user and not debit_from_user:
             is_debit = False
-        elif 'debited' in sms_lower:
+        else:
+            # Both reference user — last resort: "debited" wins (more explicit)
             is_credit = False
 
     if not (is_debit or is_credit):

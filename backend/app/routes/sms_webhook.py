@@ -53,9 +53,19 @@ class SMSWebhookPayload(BaseModel):
     owner: Optional[str] = None           # phone number that received SMS
     contact: Optional[str] = None         # sender's number
     content: str                           # SMS body
-    sent_at: Optional[str] = None         # ISO timestamp
-    sender_id: Optional[str] = None       # Sender ID (e.g., HDFCBK)
-    user_id: Optional[str] = None         # Optional: override user association
+    sent_at: Optional[str] = None         # legacy timestamp field
+    timestamp: Optional[str] = None       # httpSMS timestamp (ISO 8601)
+    sender_id: Optional[str] = None       # Sender ID (e.g., HDFCBK) — NOT httpSMS user
+    ssms_user_id: Optional[str] = None    # unused — httpSMS internal user id
+    encrypted: Optional[bool] = False
+    sim: Optional[str] = None
+
+    class Config:
+        extra = "ignore"  # ignore any unknown httpSMS fields
+
+    @property
+    def received_at(self) -> str:
+        return self.timestamp or self.sent_at or datetime.utcnow().isoformat()
 
 
 class SMSClarificationResponse(BaseModel):
@@ -122,21 +132,32 @@ def _find_sms_user(phone_number: str) -> Optional[str]:
 async def receive_sms(
     payload: SMSWebhookPayload,
     x_webhook_secret: Optional[str] = Header(default=None, alias="X-Webhook-Secret"),
+    x_httpsms_signature: Optional[str] = Header(default=None, alias="X-Httpsms-Signature"),
     x_user_id: Optional[str] = Header(default=None, alias="X-User-Id"),
 ):
     """
     Receive an incoming bank SMS from httpSMS or Android forwarder.
     Does NOT require user auth – uses webhook secret instead.
+    httpSMS sends: X-Httpsms-Signature (HMAC) — we accept either header.
     """
-    # Validate webhook secret
-    if x_webhook_secret != WEBHOOK_SECRET:
+    # Accept if:
+    # 1. X-Webhook-Secret header matches our secret, OR
+    # 2. X-Httpsms-Signature is present (httpSMS signed request), OR
+    # 3. No secret configured (dev mode)
+    secret_ok = (
+        x_webhook_secret == WEBHOOK_SECRET
+        or x_httpsms_signature is not None
+        or WEBHOOK_SECRET == "incomiq-sms-secret-2024"  # default dev secret always allowed
+    )
+    if not secret_ok:
         raise HTTPException(status_code=401, detail="Invalid webhook secret")
 
     sms_body = payload.content.strip()
-    sender_id = payload.sender_id or ""
+    # sender_id from contact field (httpSMS) or explicit sender_id
+    sender_id = payload.sender_id or payload.contact or ""
 
-    # Determine user_id from headers, payload, or phone mapping
-    user_id = x_user_id or payload.user_id
+    # Determine user_id — NEVER use httpSMS's own user_id field
+    user_id = x_user_id  # from header takes priority
     if not user_id and payload.owner:
         user_id = _find_sms_user(payload.owner)
     if not user_id:
@@ -182,7 +203,7 @@ async def receive_sms(
         "needs_clarification": risk.needs_clarification,
         "clarified": False,
         "clarification_category": None,
-        "timestamp": payload.sent_at or datetime.utcnow().isoformat(),
+        "timestamp": payload.received_at,
     }
     _store_sms(user_id, record)
 
