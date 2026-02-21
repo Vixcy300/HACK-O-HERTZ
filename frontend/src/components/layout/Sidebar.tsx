@@ -12,11 +12,12 @@ import {
   LogOut,
   ChevronLeft,
   Shield,
+  Smartphone,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useTranslation } from '@/lib/i18n'
 
-type TranslationKey = 'nav_dashboard' | 'nav_income' | 'nav_expenses' | 'nav_rules' | 'nav_goals' | 'nav_investments' | 'nav_ai_chat' | 'nav_admin' | 'nav_settings'
+type TranslationKey = 'nav_dashboard' | 'nav_income' | 'nav_expenses' | 'nav_rules' | 'nav_goals' | 'nav_investments' | 'nav_ai_chat' | 'nav_admin' | 'nav_settings' | 'nav_sms_alerts'
 
 const navItems: { to: string; labelKey: TranslationKey; icon: typeof LayoutDashboard; navKey: string; adminOnly?: boolean }[] = [
   { to: '/', labelKey: 'nav_dashboard', icon: LayoutDashboard, navKey: 'dashboard' },
@@ -26,6 +27,7 @@ const navItems: { to: string; labelKey: TranslationKey; icon: typeof LayoutDashb
   { to: '/goals', labelKey: 'nav_goals', icon: Target, navKey: 'goals' },
   { to: '/investments', labelKey: 'nav_investments', icon: TrendingUp, navKey: 'investments' },
   { to: '/ai-chat', labelKey: 'nav_ai_chat', icon: Bot, navKey: 'ai-chat' },
+  { to: '/sms-alerts', labelKey: 'nav_sms_alerts', icon: Smartphone, navKey: 'sms-alerts' },
   { to: '/admin', labelKey: 'nav_admin', icon: Shield, navKey: 'admin', adminOnly: true },
   { to: '/settings', labelKey: 'nav_settings', icon: Settings, navKey: 'settings' },
 ]

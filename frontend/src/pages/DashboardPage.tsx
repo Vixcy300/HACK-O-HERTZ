@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { Wallet, Layers, BarChart3, PiggyBank, TrendingUp, Brain, AlertTriangle, Bell, BellRing, Mail, Sparkles, Settings, ArrowRight, Target } from 'lucide-react'
@@ -18,6 +18,9 @@ import { analyticsApi } from '@/lib/api'
 import { useNotifications } from '@/lib/useNotifications'
 import { useTranslation } from '@/lib/i18n'
 import { useAppStore } from '@/store/useAppStore'
+import { useWebSocket, type SMSAlertEvent } from '@/lib/useWebSocket'
+import SMSAlertToast from '@/components/sms/SMSAlertToast'
+import TransactionClarifyDialog from '@/components/sms/TransactionClarifyDialog'
 import toast from 'react-hot-toast'
 
 interface SavingsSuggestion {
@@ -73,6 +76,24 @@ export default function DashboardPage() {
   const [loadingMetrics, setLoadingMetrics] = useState(true)
   const [streaks, setStreaks] = useState(defaultStreaks)
   const { permission, requestPermission, showLocalNotification, sendTestEmail } = useNotifications()
+  const { isConnected, lastEvent, pendingClarifications, respondToClarification, dismissClarification } = useWebSocket()
+  const [smsAlerts, setSmsAlerts] = useState<SMSAlertEvent[]>([])
+
+  // Collect incoming SMS alerts for the floating toast panel
+  useEffect(() => {
+    if (lastEvent?.event === 'sms_alert') {
+      setSmsAlerts((prev) => [lastEvent as SMSAlertEvent, ...prev].slice(0, 5))
+    }
+  }, [lastEvent])
+
+  const handleDismissAlert = useCallback((smsId: string) => {
+    setSmsAlerts((prev) => prev.filter((a) => a.sms_id !== smsId))
+  }, [])
+
+  const handleCategorizeAlert = useCallback((alert: SMSAlertEvent) => {
+    // Promote alert to a clarification dialog
+    setSmsAlerts((prev) => prev.filter((a) => a.sms_id !== alert.sms_id))
+  }, [])
   
   // Calculated values from REAL data
   const remainingToInvest = Math.max(0, metrics.total_income - metrics.total_expenses - settings.savingsTarget)
@@ -167,7 +188,15 @@ export default function DashboardPage() {
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">{t('dash_title')}</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-gray-900 tracking-tight">{t('dash_title')}</h1>
+            {isConnected && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700 border border-emerald-200">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Live
+              </span>
+            )}
+          </div>
           <p className="text-gray-500 mt-1">{t('dash_subtitle')}</p>
         </div>
         <div className="flex gap-2">
@@ -528,6 +557,14 @@ export default function DashboardPage() {
           <SpendingStreaks streaks={streaks} />
         </motion.div>
       </div>
+
+      {/* Global real-time SMS alert components */}
+      <SMSAlertToast alerts={smsAlerts} onDismiss={handleDismissAlert} onCategorize={handleCategorizeAlert} />
+      <TransactionClarifyDialog
+        event={pendingClarifications[0] ?? null}
+        onConfirm={respondToClarification}
+        onDismiss={dismissClarification}
+      />
     </div>
   )
 }

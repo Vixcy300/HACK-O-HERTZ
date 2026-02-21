@@ -39,6 +39,38 @@ def _save_tokens(tokens: dict[str, str]):
     TOKENS_FILE.write_text(json.dumps(tokens, indent=2))
 
 
+def decode_token(token: str) -> dict:
+    """
+    Decode a token and return its claims as a dict.
+    For local auth this returns {"sub": user_id, "email": email}.
+    Raises ValueError if token is invalid.
+    """
+    if token == "demo-token":
+        return {"sub": "demo-user-001", "email": "rahul@demo.com"}
+
+    tokens = _load_tokens()
+    email = tokens.get(token)
+    if email:
+        from app.local_auth import _load_users
+        users = _load_users()
+        user_data = users.get(email, {})
+        return {"sub": user_data.get("id", email), "email": email}
+
+    # Try Supabase
+    if not USE_LOCAL_AUTH:
+        try:
+            from app.config import get_supabase
+            sb = get_supabase()
+            user_response = sb.auth.get_user(token)
+            user = user_response.user
+            if user:
+                return {"sub": user.id, "email": user.email}
+        except Exception:
+            pass
+
+    raise ValueError("Invalid or expired token")
+
+
 def register_local_token(token: str, email: str):
     """Register a token for local auth (persisted to file)."""
     tokens = _load_tokens()

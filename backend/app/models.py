@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, List
 from datetime import date, datetime
 from enum import Enum
 
@@ -170,3 +170,57 @@ class DashboardMetrics(BaseModel):
     savings_rate: float
     income_change: float  # % change from prev month
     expense_change: float
+
+# ── SMS / Transaction Alert Models ──────────────
+
+class SMSClarificationResponse(BaseModel):
+    """User's answer to a transaction clarification prompt."""
+    sms_id: str
+    user_id: str
+    category: str
+    description: str
+    confirmed_as: str  # 'expense' | 'income' | 'ignore'
+
+
+class SMSWebhookPayload(BaseModel):
+    """httpSMS or Android forwarder payload."""
+    message_id: Optional[str] = None
+    owner: Optional[str] = None       # phone that received SMS
+    contact: Optional[str] = None     # sender number
+    content: str
+    sent_at: Optional[str] = None
+    sender_id: Optional[str] = None
+    user_id: Optional[str] = None
+
+
+class SMSRecord(BaseModel):
+    id: str
+    user_id: str
+    content: str
+    sender_id: Optional[str] = None
+    parsed_amount: Optional[float] = None
+    parsed_type: Optional[str] = None   # 'credit' | 'debit'
+    parsed_merchant: Optional[str] = None
+    parsed_mode: Optional[str] = None
+    bank_name: Optional[str] = None
+    risk_score: Optional[float] = None
+    risk_level: Optional[str] = None    # 'safe' | 'warning' | 'high_risk' | 'critical'
+    auto_processed: bool = False
+    needs_clarification: bool = False
+    clarified: bool = False
+    clarification_category: Optional[str] = None
+    timestamp: str
+
+
+class RegisterDeviceRequest(BaseModel):
+    phone: str
+    user_id: Optional[str] = None
+
+
+# ── Push Notification Models ─────────────────────
+
+class PushSubscription(BaseModel):
+    """Browser Web Push subscription object."""
+    endpoint: str
+    keys: dict   # {'p256dh': '...', 'auth': '...'}
+    user_agent: Optional[str] = None

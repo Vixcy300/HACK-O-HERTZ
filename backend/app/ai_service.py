@@ -367,6 +367,94 @@ def _fallback_insights(incomes: list, expenses: list) -> list:
     return insights
 
 
+async def ai_categorize_sms_transaction(
+    amount: float,
+    merchant: str,
+    transaction_mode: str,
+    bank_name: str,
+    raw_sms: str,
+    user_context: dict,
+) -> dict:
+    """
+    Use Groq AI to intelligently categorize an SMS transaction.
+    Returns category, is_dirty_spend, and a human-readable explanation.
+    """
+    if not client:
+        return {
+            "category": "other",
+            "is_dirty_spend": amount > 2000,
+            "explanation": "AI unavailable. Manual categorization recommended.",
+            "confidence": 0.3,
+        }
+
+    monthly_income = user_context.get("monthly_income", 0)
+    income_pct = (amount / monthly_income * 100) if monthly_income > 0 else 0
+
+    prompt = f"""You are a financial transaction categorizer for Indian bank customers.
+
+Transaction Details:
+- Amount: ₹{amount:,.0f}
+- Merchant/Recipient: {merchant or 'Unknown'}
+- Transaction Mode: {transaction_mode}
+- Bank: {bank_name}
+- Raw SMS: {raw_sms[:200]}
+- User Monthly Income: ₹{monthly_income:,.0f}
+- This is {income_pct:.1f}% of monthly income
+
+Categorize this transaction. Return JSON:
+{{
+  "category": "<one of: food, transport, utilities, entertainment, healthcare, education, shopping, rent, bills, other>",
+  "sub_category": "<specific type, e.g., 'food_delivery', 'fuel', 'movie', 'salary'>",
+  "is_dirty_spend": <true if non-essential/impulse purchase, false if necessity>,
+  "is_necessity": <true if bills/rent/medical/education/transport>,
+  "explanation": "<1 sentence why this category>",
+  "confidence": <0.0-1.0>,
+  "should_ask_user": <true if uncertain or amount > ₹2000>
+}}
+
+Common dirty spends: food delivery (Swiggy/Zomato), entertainment (Netflix/movies/gaming), shopping (clothes/gadgets).
+Common necessities: electricity bill, rent, medical, petrol, school fees, phone recharge.
+
+Return ONLY valid JSON."""
+
+    try:
+        response = _chat_completion(
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.2,
+            max_tokens=300,
+        )
+        text = response.choices[0].message.content.strip()
+        if text.startswith("```"):
+            text = text.split("```")[1]
+            if text.startswith("json"):
+                text = text[4:]
+        return json.loads(text)
+    except Exception:
+        # Fallback: simple keyword matching
+        merchant_lower = (merchant or '').lower()
+        sms_lower = raw_sms.lower()
+
+        dirty_kw = ['swiggy', 'zomato', 'netflix', 'amazon prime', 'hotstar', 'myntra', 'gaming', 'casino']
+        essential_kw = ['hospital', 'pharmacy', 'electricity', 'rent', 'petrol', 'school', 'insurance', 'recharge']
+
+        for kw in dirty_kw:
+            if kw in merchant_lower or kw in sms_lower:
+                return {"category": "entertainment", "is_dirty_spend": True, "is_necessity": False, "explanation": f"Detected {kw}", "confidence": 0.7, "should_ask_user": False}
+
+        for kw in essential_kw:
+            if kw in merchant_lower or kw in sms_lower:
+                return {"category": "utilities", "is_dirty_spend": False, "is_necessity": True, "explanation": f"Detected {kw}", "confidence": 0.7, "should_ask_user": False}
+
+        return {
+            "category": "other",
+            "is_dirty_spend": amount > 2000,
+            "is_necessity": False,
+            "explanation": "Could not determine category. Please classify manually.",
+            "confidence": 0.2,
+            "should_ask_user": True,
+        }
+
+
 async def ai_chat(
     user_message: str,
     language: str,

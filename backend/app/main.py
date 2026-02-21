@@ -3,6 +3,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.routes import auth, incomes, expenses, rules, goals, analytics, investments, notifications, transactions, ai_chat, admin
+from app.routes import sms_webhook, ws
 from contextlib import asynccontextmanager
 
 
@@ -60,8 +61,16 @@ app.include_router(notifications.router, prefix="/api")
 app.include_router(transactions.router, prefix="/api")
 app.include_router(ai_chat.router, prefix="/api")
 app.include_router(admin.router, prefix="/api")
+app.include_router(sms_webhook.router, prefix="/api")
+
+# WebSocket route (no /api prefix — ws://host/ws/{user_id})
+app.include_router(ws.router)
 
 
 @app.get("/api/health")
 async def health():
-    return {"status": "healthy", "version": "1.0.0"}
+    return {
+        "status": "healthy",
+        "version": "2.0.0",
+        "features": ["sms_webhook", "websocket", "ai_chat", "risk_engine"],
+    }
