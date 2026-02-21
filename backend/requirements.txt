@@ -1,5 +1,6 @@
 fastapi==0.115.0
 uvicorn[standard]==0.30.6
+appwrite==15.2.0
 websockets==13.1
 supabase==2.10.0
 python-dotenv==1.0.1
