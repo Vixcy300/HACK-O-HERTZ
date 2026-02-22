@@ -361,6 +361,19 @@ async def receive_sms(
         await _notify(income_added_event(income_record))
         record["auto_processed"] = True
         record["auto_category"] = income_info["category"]
+        # ── Credits NEVER need clarification — force-reset regardless of risk score ──
+        record["needs_clarification"] = False
+        record["clarified"] = True
+        record["risk_score"] = 0.0
+        record["risk_level"] = "safe"
+        # Build a clean income alert message
+        source_label = income_info.get("source_name") or parsed.merchant or sender_id or "UPI sender"
+        category_emoji = {
+            "salary": "💼", "freelance": "💻", "delivery": "📦",
+            "content": "🎬", "refund": "↩️", "investment": "📈",
+            "transfer": "🏦", "upi_credit": "💸",
+        }.get(income_info["category"], "💰")
+        record["income_alert_message"] = f"{category_emoji} ₹{parsed.amount:,.0f} received from {source_label}"
 
     # ── Auto-track expense (ALL debit SMS) ────────────────────────────────
     elif parsed.is_expense:
@@ -405,18 +418,24 @@ async def receive_sms(
     # Save final record (after all AI enrichment)
     _store_sms(user_id, record)
 
+    # ── Build alert message — use income-specific message for credits ──
+    final_alert_message = record.get("income_alert_message") or risk.alert_message
+    final_needs_clarification = record.get("needs_clarification", risk.needs_clarification)
+    final_risk_score = record.get("risk_score", risk.score)
+    final_risk_level = record.get("risk_level", risk.level)
+
     # Send real-time alert for all transactions
     alert_evt = sms_alert_event(
         transaction_type=parsed.transaction_type,
         amount=parsed.amount,
         merchant=parsed.merchant or "",
-        risk_score=risk.score,
-        risk_level=risk.level,
-        alert_message=risk.alert_message,
-        suggestion=risk.suggestion,
-        needs_clarification=risk.needs_clarification,
-        is_dirty_spend=risk.is_dirty_spend,
-        auto_category=risk.auto_category,
+        risk_score=final_risk_score,
+        risk_level=final_risk_level,
+        alert_message=final_alert_message,
+        suggestion=risk.suggestion if parsed.is_expense else f"₹{parsed.amount:,.0f} auto-added to your income tracker.",
+        needs_clarification=False if parsed.is_income else final_needs_clarification,
+        is_dirty_spend=risk.is_dirty_spend if parsed.is_expense else False,
+        auto_category=record.get("auto_category") or risk.auto_category,
         bank_name=parsed.bank_name or "",
         transaction_mode=parsed.transaction_mode or "",
         sms_id=sms_id,
