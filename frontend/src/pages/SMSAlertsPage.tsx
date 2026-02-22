@@ -18,7 +18,6 @@ import {
   ExternalLink,
   Copy,
   CheckCheck,
-  Info,
   Shield,
   Activity,
   MessageSquare,
@@ -51,10 +50,13 @@ interface SMSRecord {
   risk_score?: number
   risk_level?: string
   auto_processed: boolean
+  auto_category?: string
   needs_clarification: boolean
   clarified: boolean
   clarification_category?: string
   timestamp: string
+  ai_message?: string
+  ai_suggested_categories?: string[]
 }
 
 interface WebhookInfo {
@@ -87,6 +89,27 @@ export default function SMSAlertsPage() {
   const [customUrl, setCustomUrl] = useState('')
   const [updatingUrl, setUpdatingUrl] = useState(false)
   const [showSetup, setShowSetup] = useState(false)
+  const [showPermissionWarning, setShowPermissionWarning] = useState(true)
+
+  // Today's financial pulse
+  const today = new Date().toISOString().split('T')[0]
+  const todayRecords = records.filter((r) => r.timestamp?.startsWith(today))
+  const todayIncome = todayRecords.filter((r) => r.parsed_type === 'credit').reduce((s, r) => s + (r.parsed_amount ?? 0), 0)
+  const todaySpend = todayRecords.filter((r) => r.parsed_type === 'debit').reduce((s, r) => s + (r.parsed_amount ?? 0), 0)
+  const todayHighRisk = todayRecords.filter((r) => r.risk_level === 'high_risk' || r.risk_level === 'critical').length
+
+  // Income category display labels
+  const INCOME_CATEGORY_LABELS: Record<string, { label: string; icon: string }> = {
+    salary: { label: 'Salary', icon: '💼' },
+    freelance: { label: 'Freelance', icon: '💻' },
+    delivery: { label: 'Platform Pay', icon: '📦' },
+    content: { label: 'Ad Revenue', icon: '🎬' },
+    refund: { label: 'Refund', icon: '↩️' },
+    investment: { label: 'Investment', icon: '📈' },
+    transfer: { label: 'Bank Transfer', icon: '🏦' },
+    upi_credit: { label: 'UPI Credit', icon: '💸' },
+    other: { label: 'Income', icon: '💰' },
+  }
 
   const fetchRecords = useCallback(async () => {
     try {
@@ -217,7 +240,7 @@ export default function SMSAlertsPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-violet-500/20">
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/20">
                 <Smartphone className="text-white" size={20} />
               </div>
               Live SMS Alerts
@@ -252,7 +275,7 @@ export default function SMSAlertsPage() {
         {/* ── Stats Cards ── */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
-            { label: 'Total SMS', value: stats.total, icon: MessageSquare, gradient: 'from-violet-500 to-purple-600', lightBg: 'bg-violet-50/80', lightBorder: 'border-violet-200/60' },
+            { label: 'Total SMS', value: stats.total, icon: MessageSquare, gradient: 'from-amber-500 to-orange-500', lightBg: 'bg-amber-50/80', lightBorder: 'border-amber-200/60' },
             { label: 'Credits', value: stats.credits, icon: TrendingUp, gradient: 'from-emerald-500 to-teal-600', lightBg: 'bg-emerald-50/80', lightBorder: 'border-emerald-200/60' },
             { label: 'Debits', value: stats.debits, icon: TrendingDown, gradient: 'from-rose-500 to-red-600', lightBg: 'bg-rose-50/80', lightBorder: 'border-rose-200/60' },
             { label: 'High Risk', value: stats.highRisk, icon: AlertTriangle, gradient: 'from-orange-500 to-amber-600', lightBg: 'bg-orange-50/80', lightBorder: 'border-orange-200/60' },
@@ -275,6 +298,46 @@ export default function SMSAlertsPage() {
           ))}
         </div>
 
+        {/* ── Today's Financial Pulse ── */}
+        {todayRecords.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex items-center gap-3 px-4 py-2.5 rounded-2xl bg-white/70 dark:bg-white/[0.04] border border-gray-200/60 dark:border-white/[0.07] backdrop-blur-xl shadow-sm flex-wrap"
+          >
+            <span className="text-gray-400 dark:text-gray-500 text-xs font-semibold uppercase tracking-wide mr-1">Today</span>
+            {todayIncome > 0 && (
+              <div className="flex items-center gap-1.5 bg-emerald-50/80 dark:bg-emerald-500/10 border border-emerald-200/60 dark:border-emerald-500/20 rounded-xl px-2.5 py-1">
+                <TrendingUp size={11} className="text-emerald-500" />
+                <span className="text-xs font-bold text-emerald-700 dark:text-emerald-300">+{formatCurrency(todayIncome)}</span>
+                <span className="text-[10px] text-emerald-600/70 dark:text-emerald-400/70">in</span>
+              </div>
+            )}
+            {todaySpend > 0 && (
+              <div className="flex items-center gap-1.5 bg-rose-50/80 dark:bg-red-500/10 border border-rose-200/60 dark:border-red-500/20 rounded-xl px-2.5 py-1">
+                <TrendingDown size={11} className="text-rose-500" />
+                <span className="text-xs font-bold text-rose-700 dark:text-red-300">-{formatCurrency(todaySpend)}</span>
+                <span className="text-[10px] text-rose-600/70 dark:text-red-400/70">out</span>
+              </div>
+            )}
+            {todayIncome > 0 && todaySpend > 0 && (
+              <div className={`flex items-center gap-1 px-2.5 py-1 rounded-xl border text-xs font-bold ${
+                todayIncome > todaySpend
+                  ? 'bg-emerald-50/60 dark:bg-emerald-500/8 border-emerald-200/50 dark:border-emerald-500/15 text-emerald-700 dark:text-emerald-400'
+                  : 'bg-amber-50/60 dark:bg-amber-500/8 border-amber-200/50 dark:border-amber-500/15 text-amber-700 dark:text-amber-400'
+              }`}>
+                Net {todayIncome > todaySpend ? '+' : '-'}{formatCurrency(Math.abs(todayIncome - todaySpend))}
+              </div>
+            )}
+            {todayHighRisk > 0 && (
+              <div className="flex items-center gap-1 ml-auto bg-orange-50/80 dark:bg-orange-500/10 border border-orange-200/50 dark:border-orange-500/20 rounded-xl px-2.5 py-1">
+                <AlertTriangle size={10} className="text-orange-500" />
+                <span className="text-[10px] font-semibold text-orange-700 dark:text-orange-300">{todayHighRisk} risky</span>
+              </div>
+            )}
+          </motion.div>
+        )}
+
         {/* ── Main Grid ── */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
@@ -290,7 +353,7 @@ export default function SMSAlertsPage() {
                   onClick={() => setFilterType(type)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                     filterType === type
-                      ? 'bg-violet-600 text-white shadow-sm shadow-violet-500/20'
+                      ? 'bg-amber-500 text-white shadow-sm shadow-amber-500/20'
                       : 'bg-gray-100/80 dark:bg-white/[0.06] text-gray-600 dark:text-gray-400 hover:bg-gray-200/80 dark:hover:bg-white/10'
                   }`}
                 >
@@ -305,7 +368,7 @@ export default function SMSAlertsPage() {
                   onClick={() => setFilterRisk(risk)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                     filterRisk === risk
-                      ? 'bg-violet-600 text-white shadow-sm shadow-violet-500/20'
+                      ? 'bg-amber-500 text-white shadow-sm shadow-amber-500/20'
                       : 'bg-gray-100/80 dark:bg-white/[0.06] text-gray-600 dark:text-gray-400 hover:bg-gray-200/80 dark:hover:bg-white/10'
                   }`}
                 >
@@ -368,14 +431,23 @@ export default function SMSAlertsPage() {
                                     {isCredit ? '+' : '-'}
                                     {record.parsed_amount ? formatCurrency(record.parsed_amount) : '?'}
                                   </span>
-                                  {record.risk_level && (
+                                  {isCredit ? (
+                                    <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full border font-medium bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-500/30">
+                                      <TrendingUp size={9} />
+                                      Income
+                                    </span>
+                                  ) : record.risk_level ? (
                                     <span className={`inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full border font-medium ${risk.bg} ${risk.text} ${risk.border}`}>
                                       <span className={`w-1.5 h-1.5 rounded-full ${risk.dot}`} />
                                       {risk.label}
                                     </span>
-                                  )}
+                                  ) : null}
                                   {record.auto_processed && (
-                                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-violet-100 dark:bg-violet-500/15 border border-violet-200 dark:border-violet-500/30 text-violet-700 dark:text-violet-300 flex items-center gap-1 font-medium">
+                                    <span className={`text-[10px] px-2 py-0.5 rounded-full flex items-center gap-1 font-medium border ${
+                                      isCredit
+                                        ? 'bg-teal-100 dark:bg-teal-500/15 border-teal-200 dark:border-teal-500/30 text-teal-700 dark:text-teal-300'
+                                        : 'bg-violet-100 dark:bg-violet-500/15 border-violet-200 dark:border-violet-500/30 text-violet-700 dark:text-violet-300'
+                                    }`}>
                                       <CheckCheck size={10} />
                                       Auto-saved
                                     </span>
@@ -387,14 +459,21 @@ export default function SMSAlertsPage() {
                                   )}
                                 </div>
                                 <p className="text-gray-500 dark:text-gray-400 text-xs mt-0.5 truncate">
-                                  {[record.parsed_merchant || record.sender_id || 'Unknown', record.parsed_mode, record.bank_name].filter(Boolean).join(' \u00b7 ')}
+                                  {isCredit && record.auto_category
+                                    ? [
+                                        (INCOME_CATEGORY_LABELS[record.auto_category] ? `${INCOME_CATEGORY_LABELS[record.auto_category].icon} ${INCOME_CATEGORY_LABELS[record.auto_category].label}` : '💰 Income'),
+                                        record.parsed_merchant || record.sender_id || undefined,
+                                        record.bank_name,
+                                      ].filter(Boolean).join(' · ')
+                                    : [record.parsed_merchant || record.sender_id || 'Unknown', record.parsed_mode, record.bank_name].filter(Boolean).join(' · ')
+                                  }
                                 </p>
                               </div>
                             </div>
 
                             <div className="flex-shrink-0 flex items-center gap-3">
                               <div className="text-right hidden sm:block">
-                                {record.risk_score !== undefined && (
+                                {!isCredit && record.risk_score !== undefined && (
                                   <div className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500 justify-end">
                                     <Shield size={10} />
                                     <span>{record.risk_score.toFixed(0)}/100</span>
@@ -446,34 +525,58 @@ export default function SMSAlertsPage() {
           {/* Right sidebar */}
           <div className="space-y-4">
 
-            {/* ── Android Permission Warning ── */}
-            <div className="bg-red-50/90 dark:bg-red-950/40 backdrop-blur-xl border-2 border-red-300 dark:border-red-500/60 rounded-2xl p-4 shadow-sm">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-8 h-8 rounded-xl bg-red-100 dark:bg-red-500/20 flex items-center justify-center flex-shrink-0">
-                  <XCircle size={16} className="text-red-600 dark:text-red-400" />
-                </div>
-                <div>
-                  <h3 className="text-red-700 dark:text-red-300 font-bold text-sm">Android Permission Required</h3>
-                  <p className="text-red-600/80 dark:text-red-400/80 text-xs">httpSMS needs SMS permissions to forward</p>
-                </div>
-              </div>
-              <div className="space-y-2 mb-3">
-                {[
-                  'Open httpSMS on your Android phone',
-                  'Tap the red "Missing Permission" banner',
-                  'Allow SMS Read + SMS Receive permissions',
-                  'Set httpSMS as your DEFAULT SMS App',
-                  'Allow "Ignore Battery Optimisation"',
-                ].map((step, i) => (
-                  <div key={i} className="flex items-start gap-2 text-xs text-red-700 dark:text-red-300">
-                    <span className="flex-shrink-0 w-4 h-4 rounded-full bg-red-200 dark:bg-red-500/30 text-red-700 dark:text-red-200 flex items-center justify-center font-bold text-[10px]">{i + 1}</span>
-                    <span>{step}</span>
+            {/* ── Android Permission Warning (collapsible) ── */}
+            <div className={`backdrop-blur-xl rounded-2xl overflow-hidden border-2 transition-colors ${
+              showPermissionWarning
+                ? 'bg-red-50/90 dark:bg-red-950/40 border-red-300 dark:border-red-500/60'
+                : 'bg-white/60 dark:bg-white/[0.04] border-red-200/60 dark:border-red-500/20'
+            }`}>
+              <button
+                onClick={() => setShowPermissionWarning(!showPermissionWarning)}
+                className="w-full flex items-center justify-between p-4"
+              >
+                <div className="flex items-center gap-2">
+                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                    showPermissionWarning ? 'bg-red-100 dark:bg-red-500/20' : 'bg-red-50 dark:bg-red-500/10'
+                  }`}>
+                    <XCircle size={16} className="text-red-600 dark:text-red-400" />
                   </div>
-                ))}
-              </div>
-              <p className="text-red-600/80 dark:text-red-400/70 text-xs bg-red-100/80 dark:bg-red-500/10 rounded-xl p-2">
-                Without SMS permissions, httpSMS won't forward messages to your webhook.
-              </p>
+                  <div className="text-left">
+                    <h3 className="text-red-700 dark:text-red-300 font-bold text-sm">Android Permission Required</h3>
+                    <p className="text-red-600/70 dark:text-red-400/70 text-xs">Tap to {showPermissionWarning ? 'collapse' : 'view setup steps'}</p>
+                  </div>
+                </div>
+                {showPermissionWarning ? <ChevronUp size={14} className="text-red-500" /> : <ChevronDown size={14} className="text-red-400" />}
+              </button>
+
+              <AnimatePresence>
+                {showPermissionWarning && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="px-4 pb-4 space-y-2">
+                      {[
+                        'Open httpSMS on your Android phone',
+                        'Tap the red "Missing Permission" banner',
+                        'Allow SMS Read + SMS Receive permissions',
+                        'Set httpSMS as your DEFAULT SMS App',
+                        'Allow "Ignore Battery Optimisation"',
+                      ].map((step, i) => (
+                        <div key={i} className="flex items-start gap-2 text-xs text-red-700 dark:text-red-300">
+                          <span className="flex-shrink-0 w-4 h-4 rounded-full bg-red-200 dark:bg-red-500/30 text-red-700 dark:text-red-200 flex items-center justify-center font-bold text-[10px]">{i + 1}</span>
+                          <span>{step}</span>
+                        </div>
+                      ))}
+                      <p className="text-red-600/80 dark:text-red-400/70 text-xs bg-red-100/80 dark:bg-red-500/10 rounded-xl p-2 mt-2">
+                        Without SMS permissions, httpSMS won't forward messages to your webhook.
+                      </p>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             {/* ── Connection Status ── */}
@@ -554,12 +657,12 @@ export default function SMSAlertsPage() {
                     value={customUrl}
                     onChange={e => setCustomUrl(e.target.value)}
                     placeholder="https://xxxx.trycloudflare.com"
-                    className="flex-1 text-xs bg-gray-50/80 dark:bg-black/20 border border-gray-200 dark:border-white/[0.08] rounded-xl px-3 py-2 text-gray-900 dark:text-white placeholder:text-gray-400 outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-400 dark:focus:border-violet-500/40 min-w-0"
+                    className={`text-xs bg-gray-50/80 dark:bg-black/20 border border-gray-200 dark:border-white/[0.08] rounded-xl px-3 py-2 text-gray-900 dark:text-white placeholder:text-gray-400 outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-400 dark:focus:border-amber-500/40 min-w-0`}
                   />
                   <button
                     onClick={() => updateWebhookUrl(customUrl)}
                     disabled={updatingUrl || !customUrl}
-                    className="flex-shrink-0 px-3 py-2 bg-violet-600 hover:bg-violet-700 disabled:opacity-50 text-white text-xs font-medium rounded-xl transition-colors shadow-sm shadow-violet-500/20"
+                    className="flex-shrink-0 px-3 py-2 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white text-xs font-medium rounded-xl transition-colors shadow-sm shadow-amber-500/20"
                   >
                     {updatingUrl ? <RefreshCw size={12} className="animate-spin" /> : 'Save'}
                   </button>
@@ -574,8 +677,8 @@ export default function SMSAlertsPage() {
                 className="w-full p-4 flex items-center justify-between text-left"
               >
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-violet-100 dark:bg-violet-500/15 flex items-center justify-center">
-                    <Terminal size={14} className="text-violet-600 dark:text-violet-400" />
+                <div className="w-8 h-8 rounded-xl bg-amber-100 dark:bg-amber-500/15 flex items-center justify-center">
+                  <Terminal size={14} className="text-amber-600 dark:text-amber-400" />
                   </div>
                   <h3 className="text-gray-900 dark:text-white font-semibold text-sm">Setup Guide</h3>
                 </div>
@@ -626,7 +729,7 @@ export default function SMSAlertsPage() {
                           href="https://httpsms.com"
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center gap-2 w-full justify-center py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium transition-colors shadow-sm shadow-violet-500/20"
+                          className="flex items-center gap-2 w-full justify-center py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium transition-colors shadow-sm shadow-amber-500/20"
                         >
                           <ExternalLink size={14} />
                           Download httpSMS (Android)
@@ -641,7 +744,7 @@ export default function SMSAlertsPage() {
                             'Enable "Incoming SMS" forwarding \u2192 Save',
                           ].map((step, i) => (
                             <div key={i} className="flex items-start gap-2 text-xs text-gray-600 dark:text-gray-400">
-                              <span className="flex-shrink-0 w-4 h-4 rounded-full bg-violet-100 dark:bg-violet-500/20 text-violet-600 dark:text-violet-300 flex items-center justify-center font-bold text-[10px]">{i + 1}</span>
+                              <span className="flex-shrink-0 w-4 h-4 rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-300 flex items-center justify-center font-bold text-[10px]">{i + 1}</span>
                               <span>{step}</span>
                             </div>
                           ))}
@@ -663,10 +766,11 @@ export default function SMSAlertsPage() {
               </div>
               <div className="space-y-2">
                 {[
-                  { icon: ShieldCheck,   desc: '0\u201330 \u2013 Normal transaction',  color: 'text-emerald-600 dark:text-emerald-400', dot: 'bg-emerald-500' },
-                  { icon: Activity,      desc: '31\u201360 \u2013 Monitor closely',     color: 'text-amber-600 dark:text-yellow-400',    dot: 'bg-amber-500' },
-                  { icon: AlertTriangle, desc: '61\u201380 \u2013 Non-essential spend', color: 'text-orange-600 dark:text-orange-400',   dot: 'bg-orange-500' },
-                  { icon: Zap,           desc: '81\u2013100 \u2013 Suspicious alert',  color: 'text-red-600 dark:text-red-400',          dot: 'bg-red-500' },
+                  { icon: TrendingUp,    desc: 'Credits — Income received',    color: 'text-emerald-600 dark:text-emerald-400', dot: 'bg-emerald-400' },
+                  { icon: ShieldCheck,   desc: '0–30 – Normal transaction',    color: 'text-emerald-600 dark:text-emerald-400', dot: 'bg-emerald-500' },
+                  { icon: Activity,      desc: '31–60 – Monitor closely',      color: 'text-amber-600 dark:text-yellow-400',    dot: 'bg-amber-500' },
+                  { icon: AlertTriangle, desc: '61–80 – Non-essential spend',  color: 'text-orange-600 dark:text-orange-400',   dot: 'bg-orange-500' },
+                  { icon: Zap,           desc: '81–100 – Suspicious alert',    color: 'text-red-600 dark:text-red-400',          dot: 'bg-red-500' },
                 ].map(({ icon: Icon, desc, color, dot }) => (
                   <div key={desc} className="flex items-center gap-2.5">
                     <span className={`w-2 h-2 rounded-full flex-shrink-0 ${dot}`} />

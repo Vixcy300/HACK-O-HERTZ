@@ -2,8 +2,9 @@
  * SMSAlertToast — compact live-alert card, theme-aware.
  *
  * Shows the latest transaction in a slim card (bottom-right).
+ * Credits → premium income card (green, no risk bar).
+ * Debits  → risk-scored card with alert + "spend on?" action.
  * One card at a time; navigate with arrows if multiple are queued.
- * Fully respects light / dark theme.
  */
 
 import { useState } from 'react'
@@ -19,6 +20,8 @@ import {
   ChevronLeft,
   ChevronRight,
   MessageSquare,
+  Sparkles,
+  ArrowDownLeft,
 } from 'lucide-react'
 import type { SMSAlertEvent } from '@/lib/useWebSocket'
 import { formatCurrency } from '@/lib/utils'
@@ -78,9 +81,101 @@ export default function SMSAlertToast({ alerts, onDismiss, onCategorize }: SMSAl
   // Newest alert first
   const safeIdx = Math.min(idx, total - 1)
   const alert = alerts[total - 1 - safeIdx]
+  const isCredit = alert.transaction_type === 'credit'
+
+  // ── INCOME CARD (credits) ─────────────────────────────────────────────
+  if (isCredit) {
+    return (
+      <div className="fixed bottom-5 right-5 z-[9999] w-72">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={alert.sms_id}
+            initial={{ opacity: 0, y: 16, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 16, scale: 0.96 }}
+            transition={{ type: 'spring', stiffness: 340, damping: 28 }}
+            className="rounded-2xl border border-emerald-200 dark:border-emerald-500/30 shadow-lg shadow-emerald-500/10 bg-white dark:bg-[#0d1f17]"
+          >
+            {/* Green top stripe */}
+            <div className="h-1 rounded-t-2xl bg-gradient-to-r from-emerald-400 to-teal-500" />
+
+            <div className="p-3.5">
+              {/* Header */}
+              <div className="flex items-start justify-between mb-2">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center flex-shrink-0 shadow-sm shadow-emerald-500/30">
+                    <ArrowDownLeft size={16} className="text-white" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-[11px] px-1.5 py-0.5 rounded-full font-semibold bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 flex items-center gap-1">
+                        <Sparkles size={9} />
+                        Money Received
+                      </span>
+                      {alert.transaction_mode && (
+                        <span className="text-[10px] text-gray-400 dark:text-gray-500">{alert.transaction_mode}</span>
+                      )}
+                    </div>
+                    <p className="font-bold text-lg leading-snug mt-0.5 text-emerald-600 dark:text-emerald-400">
+                      +{formatCurrency(alert.amount)}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => onDismiss(alert.sms_id)}
+                  className="p-1 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
+                >
+                  <X size={13} />
+                </button>
+              </div>
+
+              {/* Source info */}
+              {(alert.merchant || alert.bank_name) && (
+                <div className="flex items-center gap-1.5 mb-2">
+                  <TrendingUp size={11} className="text-emerald-500 dark:text-emerald-400 flex-shrink-0" />
+                  <p className="text-emerald-700/80 dark:text-emerald-400/80 text-[11px] truncate">
+                    {[alert.merchant, alert.bank_name].filter(Boolean).join(' · ')}
+                  </p>
+                </div>
+              )}
+
+              {/* Message */}
+              <p className="text-gray-600 dark:text-emerald-200/70 text-[11px] leading-relaxed line-clamp-2 bg-emerald-50/60 dark:bg-emerald-900/20 rounded-xl px-2.5 py-1.5 border border-emerald-100 dark:border-emerald-500/20">
+                {alert.alert_message}
+              </p>
+
+              {/* Navigation for multiple */}
+              {total > 1 && (
+                <div className="flex items-center gap-0.5 justify-end mt-2">
+                  <button
+                    disabled={safeIdx === total - 1}
+                    onClick={() => setIdx(i => Math.min(i + 1, total - 1))}
+                    className="p-1 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 disabled:opacity-30 transition-colors"
+                  >
+                    <ChevronLeft size={13} />
+                  </button>
+                  <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium w-8 text-center">
+                    {safeIdx + 1}/{total}
+                  </span>
+                  <button
+                    disabled={safeIdx === 0}
+                    onClick={() => setIdx(i => Math.max(i - 1, 0))}
+                    className="p-1 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 disabled:opacity-30 transition-colors"
+                  >
+                    <ChevronRight size={13} />
+                  </button>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        </AnimatePresence>
+      </div>
+    )
+  }
+
+  // ── DEBIT / EXPENSE RISK CARD ─────────────────────────────────────────
   const config = RISK_CONFIG[alert.risk_level as keyof typeof RISK_CONFIG] ?? RISK_CONFIG.warning
   const RiskIcon = config.icon
-  const isCredit = alert.transaction_type === 'credit'
 
   return (
     <div className="fixed bottom-5 right-5 z-[9999] w-72">
@@ -100,12 +195,8 @@ export default function SMSAlertToast({ alerts, onDismiss, onCategorize }: SMSAl
             {/* Header row */}
             <div className="flex items-start justify-between mb-2">
               <div className="flex items-center gap-2.5">
-                <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                  isCredit ? 'bg-emerald-100 dark:bg-emerald-500/15' : 'bg-red-100 dark:bg-red-500/15'
-                }`}>
-                  {isCredit
-                    ? <TrendingUp size={15} className="text-emerald-600 dark:text-emerald-400" />
-                    : <TrendingDown size={15} className="text-red-600 dark:text-red-400" />}
+                <div className="w-8 h-8 rounded-xl bg-red-100 dark:bg-red-500/15 flex items-center justify-center flex-shrink-0">
+                  <TrendingDown size={15} className="text-red-600 dark:text-red-400" />
                 </div>
                 <div>
                   <div className="flex items-center gap-1.5 flex-wrap">
@@ -116,10 +207,8 @@ export default function SMSAlertToast({ alerts, onDismiss, onCategorize }: SMSAl
                       <span className="text-[10px] text-gray-400 dark:text-gray-500">{alert.transaction_mode}</span>
                     )}
                   </div>
-                  <p className={`font-bold text-base leading-snug mt-0.5 ${
-                    isCredit ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'
-                  }`}>
-                    {isCredit ? '+' : '-'}{formatCurrency(alert.amount)}
+                  <p className="font-bold text-base leading-snug mt-0.5 text-red-600 dark:text-red-400">
+                    -{formatCurrency(alert.amount)}
                   </p>
                 </div>
               </div>

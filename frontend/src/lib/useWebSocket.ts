@@ -139,14 +139,24 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
             case 'sms_alert': {
               const e = data as SMSAlertEvent
               options.onSMSAlert?.(e)
-              // Show toast notification
-              if (e.risk_level === 'critical' || e.risk_level === 'high_risk') {
+              // ── Credits are INCOME — always show success toast regardless of risk_level ──
+              if (e.transaction_type === 'credit') {
+                const source = e.merchant ? ` from ${e.merchant}` : e.bank_name ? ` via ${e.bank_name}` : ''
+                toast.success(`💰 ₹${e.amount.toLocaleString('en-IN')} received${source}`, {
+                  duration: 5000,
+                  style: { background: '#052e16', color: '#4ade80', border: '1px solid #166534' },
+                })
+              } else if (e.risk_level === 'critical') {
                 const insight = e.ai_spending_insight ? `\n💡 ${e.ai_spending_insight}` : ''
                 toast.error(`🚨 ${e.alert_message}${insight}`, { duration: 8000 })
+              } else if (e.risk_level === 'high_risk') {
+                const insight = e.ai_spending_insight ? ` · ${e.ai_spending_insight}` : ''
+                toast.error(`⚠️ ${e.alert_message}${insight}`, { duration: 6000 })
               } else if (e.risk_level === 'warning') {
                 toast(`💡 ${e.alert_message}`, { duration: 5000 })
-              } else if (e.transaction_type === 'credit') {
-                toast.success(`💰 ₹${e.amount.toLocaleString('en-IN')} received${e.merchant ? ` from ${e.merchant}` : ''}`, { duration: 4000 })
+              } else {
+                // Safe debit
+                toast(`✅ ${e.alert_message}`, { duration: 3500 })
               }
               break
             }

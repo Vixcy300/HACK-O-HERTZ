@@ -22,6 +22,7 @@ Algorithms used:
 from __future__ import annotations
 
 import math
+import re
 import statistics
 from datetime import datetime, timedelta
 from typing import Optional
@@ -223,43 +224,125 @@ def score_transaction(
     Returns:
         TransactionRiskScore with detailed breakdown
     """
-    factors: list[str] = []
-    score = 0.0
-
     amount = parsed.amount or 0.0
     merchant = parsed.merchant or ''
     if not transaction_time:
         transaction_time = datetime.utcnow()
 
+    # ══════════════════════════════════════════════
+    # EARLY RETURN: Credits are INCOME — never risky
+    # ══════════════════════════════════════════════
+    if parsed.transaction_type == 'credit':
+        # Classify income source for a smarter message
+        sms_lower = parsed.raw_sms.lower()
+        if any(w in sms_lower for w in ['salary', 'sal credit', 'payroll', 'ctc']):
+            msg = f"💼 Salary credited: ₹{amount:,.0f}"
+            src = "Salary / Employer"
+            income_cat = 'salary'
+        elif any(w in sms_lower for w in ['refund', 'cashback', 'reversal', 'returned']):
+            msg = f"↩️ Refund received: ₹{amount:,.0f}"
+            src = "Refund / Cashback"
+            income_cat = 'refund'
+        elif any(w in sms_lower for w in ['interest', 'dividend', 'mutual fund', 'mf', 'redemption']):
+            msg = f"📈 Investment return: ₹{amount:,.0f}"
+            src = "Investment / Interest"
+            income_cat = 'investment'
+        elif any(w in sms_lower for w in ['neft', 'imps', 'rtgs']) and not merchant:
+            msg = f"🏦 Bank transfer received: ₹{amount:,.0f}"
+            src = "Bank Transfer"
+            income_cat = 'transfer'
+        elif parsed.transaction_mode == 'UPI':
+            sender = merchant or 'UPI sender'
+            msg = f"💰 UPI payment received: ₹{amount:,.0f} from {sender}"
+            src = sender
+            income_cat = 'upi_credit'
+        else:
+            msg = f"💰 Money received: ₹{amount:,.0f}"
+            src = merchant or "Unknown"
+            income_cat = 'other'
+
+        return TransactionRiskScore(
+            score=0.0,
+            level='safe',
+            is_dirty_spend=False,
+            needs_clarification=False,
+            alert_message=msg,
+            suggestion=f"₹{amount:,.0f} has been auto-added to your income tracker from {src}.",
+            factors=[f"Credit transaction — income from {src}"],
+            auto_category=income_cat,
+            is_necessity=True,
+        )
+
+    # ══════════════════════════════════════════════
+    # DEBIT / EXPENSE risk scoring below
+    # ══════════════════════════════════════════════
+    factors: list[str] = []
+    score = 0.0
+    sms_lower = parsed.raw_sms.lower()
+
+    # ── Detect necessity payments first (override merchant risk) ─────
+    _NECESSITY_PATTERNS = [
+        'cc bill', 'credit card bill', 'credit card payment',
+        'emi', 'loan payment', 'loan emi', 'home loan', 'car loan', 'personal loan',
+        'insurance', 'lic', 'health insurance', 'term plan',
+        'electricity', 'bescom', 'tneb', 'msedcl', 'bses', 'bill payment',
+        'broadband', 'jio fiber', 'airtel fiber',
+        'school fee', 'college fee', 'tuition fee', 'exam fee',
+        'rent', 'maintenance', 'society fee',
+    ]
+    is_necessity_payment = any(pat in sms_lower for pat in _NECESSITY_PATTERNS)
+
+    # ── Detect P2P UPI (person-to-person transfer) ───────────────────
+    # e.g. 9841234567@ybl, +918838433329 → lower risk (personal payment)
+    _m = merchant.lower()
+    is_p2p_upi = bool(
+        re.match(r'^[+]?91?[6-9][0-9]{9}(@|$)', _m)
+        or re.match(r'^[0-9]{10}(@|$)', _m)
+        or (parsed.transaction_mode == 'UPI' and re.match(r'^[0-9@]+$', _m.replace('+', '')))
+    )
+
     # ── Factor 1: Merchant risk ──────────────────
-    merch_mult, auto_cat = _merchant_risk_multiplier(merchant)
+    if is_necessity_payment:
+        # Necessary bills: near-zero risk
+        merch_mult, auto_cat = 0.05, 'essential'
+        factors.append("Necessity payment (bill / EMI / insurance)")
+    elif is_p2p_upi:
+        # Person-to-person transfer: low–medium risk (might still be unnecessary)
+        merch_mult, auto_cat = 0.25, 'transfer'
+        factors.append("Peer-to-peer UPI transfer")
+    else:
+        merch_mult, auto_cat = _merchant_risk_multiplier(merchant)
+        if merch_mult > 0.7:
+            factors.append(f"High-risk merchant: {merchant or 'Unknown'}")
+        elif merch_mult > 0.4:
+            factors.append(f"Non-essential merchant: {merchant or 'Unknown'}")
+
     score += merch_mult * 35
-    if merch_mult > 0.7:
-        factors.append(f"High-risk merchant: {merchant or 'Unknown'}")
-    elif merch_mult > 0.4:
-        factors.append(f"Non-essential merchant: {merchant or 'Unknown'}")
 
     # ── Factor 2: Amount magnitude ───────────────
-    if amount >= CRITICAL_VALUE_THRESHOLD_INR:
+    if amount >= CRITICAL_VALUE_THRESHOLD_INR and not is_necessity_payment:
         score += 25
         factors.append(f"Very high amount: ₹{amount:,.0f}")
-    elif amount >= HIGH_VALUE_THRESHOLD_INR:
+    elif amount >= HIGH_VALUE_THRESHOLD_INR and not is_necessity_payment:
         score += 12
         factors.append(f"High-value purchase: ₹{amount:,.0f}")
 
     # ── Factor 3: Percent of monthly income ──────
-    income_risk = _income_percent_risk(amount, monthly_income)
-    score += income_risk * 20
-    if income_risk > 0.3:
-        pct = (amount / monthly_income * 100) if monthly_income > 0 else 0
-        factors.append(f"Spent {pct:.0f}% of monthly income in one transaction")
+    if not is_necessity_payment:
+        income_risk = _income_percent_risk(amount, monthly_income)
+        score += income_risk * 20
+        if income_risk > 0.3:
+            pct = (amount / monthly_income * 100) if monthly_income > 0 else 0
+            factors.append(f"Spent {pct:.0f}% of monthly income in one transaction")
+    else:
+        income_risk = 0.0
 
     # ── Factor 4: Z-score anomaly ────────────────
     z = _z_score_amount(amount, amount_history or [])
-    if z > 3.0:
+    if z > 3.0 and not is_necessity_payment:
         score += 10
         factors.append(f"Statistically unusual amount (z={z:.1f}σ)")
-    elif z > 2.0:
+    elif z > 2.0 and not is_necessity_payment:
         score += 5
 
     # ── Factor 5: Time-of-day risk ───────────────
@@ -287,11 +370,24 @@ def score_transaction(
     else:
         level = 'safe'
 
-    is_dirty_spend = score >= 50 and (merch_mult > 0.5 or auto_cat in ('entertainment', 'gaming', 'alcohol', 'gambling'))
-    is_necessity = (merch_mult <= 0.1 or auto_cat == 'essential')
+    is_dirty_spend = (
+        score >= 50
+        and not is_necessity_payment
+        and not is_p2p_upi
+        and (merch_mult > 0.5 or auto_cat in ('entertainment', 'gaming', 'alcohol', 'gambling'))
+    )
+    is_necessity = is_necessity_payment or merch_mult <= 0.1 or auto_cat == 'essential'
 
     # ── Build human-readable messages ────────────
-    if score >= 80:
+    if is_necessity_payment:
+        alert_message = f"✅ Bill / EMI payment: ₹{amount:,.0f} — auto tracked."
+        suggestion = "Necessary payment logged. Stay on top of your bills!"
+        needs_clarification = False
+    elif is_p2p_upi:
+        alert_message = f"👤 Sent ₹{amount:,.0f} to {merchant or 'a person'} via UPI."
+        suggestion = "Personal UPI transfer logged. Mark it as a gift, split, or loan repayment if needed."
+        needs_clarification = amount >= HIGH_VALUE_THRESHOLD_INR  # only ask for large P2P amounts
+    elif score >= 80:
         alert_message = f"🚨 Critical Spend Alert! ₹{amount:,.0f} may be a dirty spend."
         suggestion = "This looks like a high-risk, non-essential purchase. Track it carefully and consider cutting back."
         needs_clarification = True
@@ -301,10 +397,10 @@ def score_transaction(
         needs_clarification = True
     elif score >= 30:
         alert_message = f"💡 Heads up! ₹{amount:,.0f} purchase detected. Let's make sure it's budgeted."
-        suggestion = "You spent on something non-essential. Make sure it fits your monthly budget."
+        suggestion = "Non-essential spend. Make sure it fits your monthly budget."
         needs_clarification = amount >= HIGH_VALUE_THRESHOLD_INR
     else:
-        alert_message = f"✅ ₹{amount:,.0f} transaction looks normal."
+        alert_message = f"✅ ₹{amount:,.0f} debit looks normal."
         suggestion = "Normal spend. Keep it up!"
         needs_clarification = False
 
@@ -317,6 +413,7 @@ def score_transaction(
         'gaming': 'entertainment',
         'alcohol': 'entertainment',
         'gambling': 'entertainment',
+        'transfer': 'other',
         'other': 'other',
     }
     expense_category = expense_cat_map.get(auto_cat, 'other')
