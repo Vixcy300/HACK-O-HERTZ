@@ -277,7 +277,7 @@ export default function InvestmentsPage() {
           className={cn(
             "rounded-3xl border shadow-elevated p-8 md:p-12",
             isDark 
-              ? "bg-gradient-to-br from-slate-800 via-slate-900 to-slate-800 border-slate-700" 
+              ? "bg-gradient-to-br from-[#161616] via-[#111] to-[#161616] border-white/8" 
               : "bg-gradient-to-br from-primary-50 via-white to-emerald-50 border-gray-200"
           )}
         >
@@ -291,7 +291,7 @@ export default function InvestmentsPage() {
               <TrendingUp className="w-10 h-10 text-white" />
             </motion.div>
             <h1 className={cn("text-2xl md:text-3xl font-bold mb-2", isDark ? "text-white" : "text-gray-900")}>{t('inv_title')}</h1>
-            <p className={cn("mb-8 max-w-md mx-auto text-base", isDark ? "text-slate-300" : "text-gray-600")}>
+              <p className={cn("mb-8 max-w-md mx-auto text-base", isDark ? "text-neutral-300" : "text-gray-600")}>
               {t('inv_subtitle')}
             </p>
 
@@ -305,7 +305,7 @@ export default function InvestmentsPage() {
                   )}>
                     {n}
                   </div>
-                  {n < 5 && <ChevronRight className={cn("w-4 h-4", isDark ? "text-slate-600" : "text-gray-300")} />}
+                  {n < 5 && <ChevronRight className={cn("w-4 h-4", isDark ? "text-neutral-600" : "text-gray-300")} />}
                 </div>
               ))}
             </div>
@@ -324,7 +324,7 @@ export default function InvestmentsPage() {
                 className={cn(
                   "inline-flex items-center justify-center gap-2 px-6 py-3.5 font-medium rounded-2xl border transition-all text-sm",
                   isDark 
-                    ? "text-slate-300 border-slate-600 hover:bg-slate-800" 
+                    ? "text-neutral-300 border-white/10 hover:bg-[#1f1f1f]" 
                     : "text-gray-600 border-gray-200 hover:bg-gray-50"
                 )}
               >
@@ -348,13 +348,13 @@ export default function InvestmentsPage() {
                 className={cn(
                   "backdrop-blur rounded-xl p-4 text-center border",
                   isDark 
-                    ? "bg-slate-800/80 border-slate-700" 
+                    ? "bg-[#181818]/80 border-white/8" 
                     : "bg-white/80 border-gray-100"
                 )}
               >
                 <span className="text-2xl">{f.icon}</span>
                 <p className={cn("font-semibold mt-2 text-sm", isDark ? "text-white" : "text-gray-900")}>{f.title}</p>
-                <p className={cn("text-xs", isDark ? "text-slate-400" : "text-gray-500")}>{f.desc}</p>
+                <p className={cn("text-xs", isDark ? "text-neutral-400" : "text-gray-500")}>{f.desc}</p>
               </motion.div>
             ))}
           </div>
@@ -373,7 +373,7 @@ export default function InvestmentsPage() {
           className={cn(
             "rounded-3xl border shadow-elevated p-12 text-center",
             isDark 
-              ? "bg-gradient-to-br from-slate-800 via-slate-900 to-slate-800 border-slate-700" 
+              ? "bg-gradient-to-br from-[#161616] via-[#111] to-[#161616] border-white/8" 
               : "bg-gradient-to-br from-primary-50 via-white to-blue-50 border-gray-200"
           )}
         >
@@ -698,11 +698,11 @@ export default function InvestmentsPage() {
       {aiTopPicks.length > 0 && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.28 }}>
           <h3 className={cn("font-semibold mb-4 flex items-center gap-2 text-sm", isDark ? "text-white" : "text-gray-900")}>
-            <Sparkles className="w-5 h-5 text-purple-500" />
+            <Sparkles className="w-5 h-5 text-amber-500" />
             AI Top Picks for You
             <span className={cn(
               "text-xs px-2 py-0.5 rounded-full",
-              isDark ? "bg-purple-900 text-purple-300" : "bg-purple-100 text-purple-600"
+              isDark ? "bg-amber-900/30 text-amber-300" : "bg-amber-100 text-amber-700"
             )}>Personalized</span>
           </h3>
           <div className="grid md:grid-cols-3 gap-4">
@@ -715,8 +715,8 @@ export default function InvestmentsPage() {
                 className={cn(
                   "rounded-2xl border p-5",
                   isDark 
-                    ? "bg-gradient-to-br from-purple-900/30 to-indigo-900/30 border-purple-800" 
-                    : "bg-gradient-to-br from-purple-50 to-indigo-50 border-purple-100"
+                    ? "bg-gradient-to-br from-amber-950/30 to-orange-950/30 border-amber-800/40" 
+                    : "bg-gradient-to-br from-amber-50 to-orange-50 border-amber-100"
                 )}
               >
                 <div className="flex items-center gap-2 mb-2">
@@ -724,7 +724,7 @@ export default function InvestmentsPage() {
                   <h4 className={cn("font-semibold text-sm", isDark ? "text-white" : "text-gray-900")}>{pick.name}</h4>
                 </div>
                 <p className={cn("text-xs mb-3", isDark ? "text-slate-300" : "text-gray-600")}>{pick.reason}</p>
-                <div className={cn("flex items-center justify-between pt-3 border-t", isDark ? "border-purple-800" : "border-purple-200")}>
+                <div className={cn("flex items-center justify-between pt-3 border-t", isDark ? "border-amber-800/30" : "border-amber-200")}>
                   <span className={cn("text-xs", isDark ? "text-slate-400" : "text-gray-500")}>Expected Returns</span>
                   <span className="font-bold text-emerald-600 text-sm">{pick.expected_returns}</span>
                 </div>
@@ -831,18 +831,18 @@ export default function InvestmentsPage() {
                         className={cn(
                           "mt-4 p-4 rounded-xl border",
                           isDark 
-                            ? "bg-gradient-to-br from-blue-900/30 to-indigo-900/30 border-blue-800" 
-                            : "bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-100"
+                            ? "bg-gradient-to-br from-amber-950/20 to-orange-950/20 border-amber-800/30" 
+                            : "bg-gradient-to-br from-amber-50 to-orange-50 border-amber-100"
                         )}
                       >
                         <h5 className={cn("font-semibold mb-3 flex items-center gap-2 text-sm", isDark ? "text-white" : "text-gray-900")}>
-                          <Sparkles className="w-4 h-4 text-blue-600" />
+                          <Sparkles className="w-4 h-4 text-amber-500" />
                           Investment Return Calculator
                         </h5>
                         
                         {/* Amount Input */}
                         <div className="mb-4">
-                          <label className={cn("text-xs font-medium mb-1 block", isDark ? "text-slate-300" : "text-gray-600")}>Investment Amount (₹)</label>
+                          <label className={cn("text-xs font-medium mb-1 block", isDark ? "text-neutral-300" : "text-gray-600")}>Investment Amount (₹)</label>
                           <input
                             type="number"
                             value={projectionAmount}

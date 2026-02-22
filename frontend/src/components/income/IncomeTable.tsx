@@ -273,7 +273,7 @@ export default function IncomeTable({ incomes, onDelete }: IncomeTableProps) {
             placeholder="Search income..."
             value={globalFilter}
             onChange={(e) => setGlobalFilter(e.target.value)}
-            className="w-full pl-9 pr-4 py-2.5 text-sm border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-800 dark:text-white transition-all duration-300"
+            className="w-full pl-9 pr-4 py-2.5 text-sm border border-gray-200 dark:border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent bg-white dark:bg-[#1a1a1a] dark:text-white transition-all duration-300"
           />
         </div>
         <div className="flex flex-wrap gap-2">
@@ -284,7 +284,7 @@ export default function IncomeTable({ incomes, onDelete }: IncomeTableProps) {
             className={cn(
               'px-4 py-2 text-xs font-semibold rounded-xl transition-all duration-300 flex items-center gap-1.5 shadow-sm',
               !categoryFilter 
-                ? 'bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow-purple-200' 
+                ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-amber-200' 
                 : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
             )}
           >
@@ -337,7 +337,7 @@ export default function IncomeTable({ incomes, onDelete }: IncomeTableProps) {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.03 }}
-                className="border-b border-gray-50 dark:border-gray-700/50 hover:bg-purple-50/50 dark:hover:bg-purple-900/10 transition-colors duration-200"
+                className="border-b border-gray-50 dark:border-white/5 hover:bg-amber-50/50 dark:hover:bg-amber-900/8 transition-colors duration-200"
               >
                 {row.getVisibleCells().map((cell) => (
                   <td key={cell.id} className="px-4 py-3">
@@ -363,11 +363,11 @@ export default function IncomeTable({ incomes, onDelete }: IncomeTableProps) {
             whileTap={{ scale: 0.9 }}
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
-            className="p-2 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-gray-600 dark:text-gray-300"
+            className="p-2 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-900/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-gray-600 dark:text-gray-300"
           >
             <ChevronLeft className="w-4 h-4" />
           </motion.button>
-          <span className="text-sm font-medium text-gray-700 dark:text-gray-300 px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-lg">
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-300 px-3 py-1 bg-gray-100 dark:bg-[#1f1f1f] rounded-lg">
             Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
           </span>
           <motion.button
@@ -375,7 +375,7 @@ export default function IncomeTable({ incomes, onDelete }: IncomeTableProps) {
             whileTap={{ scale: 0.9 }}
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
-            className="p-2 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-gray-600 dark:text-gray-300"
+            className="p-2 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-900/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-gray-600 dark:text-gray-300"
           >
             <ChevronRight className="w-4 h-4" />
           </motion.button>

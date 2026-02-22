@@ -57,10 +57,10 @@ const FeatureCard = ({ icon: Icon, title, description, delay }: {
       className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center flex-shrink-0 group-hover:bg-white/20 transition-colors duration-300"
       whileHover={{ rotate: 5, scale: 1.1 }}
     >
-      <Icon className="w-5 h-5 text-white group-hover:text-purple-200 transition-colors duration-300" />
+      <Icon className="w-5 h-5 text-white group-hover:text-amber-200 transition-colors duration-300" />
     </motion.div>
     <div>
-      <h3 className="font-semibold text-white text-sm group-hover:text-purple-100 transition-colors duration-300">{title}</h3>
+      <h3 className="font-semibold text-white text-sm group-hover:text-amber-100 transition-colors duration-300">{title}</h3>
       <p className="text-white/50 text-xs mt-0.5 group-hover:text-white/70 transition-colors duration-300">{description}</p>
     </div>
   </motion.div>
@@ -94,7 +94,7 @@ const AnimatedInput = ({
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
     >
-      <label className={cn("block text-sm font-medium mb-1.5", isDark ? "text-slate-300" : "text-gray-600")}>{label}</label>
+      <label className={cn("block text-sm font-medium mb-1.5", isDark ? "text-neutral-300" : "text-gray-600")}>{label}</label>
       <motion.div 
         className="relative"
         animate={{ scale: isFocused ? 1.01 : 1 }}
@@ -103,7 +103,7 @@ const AnimatedInput = ({
         <motion.div
           className={cn(
             "absolute inset-0 rounded-xl blur-sm",
-            isDark ? "bg-gradient-to-r from-slate-700 via-slate-600 to-slate-700" : "bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200"
+            isDark ? "bg-gradient-to-r from-[#2a2a2a] via-[#242424] to-[#2a2a2a]" : "bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200"
           )}
           initial={{ opacity: 0 }}
           animate={{ opacity: isFocused ? 0.5 : 0 }}
@@ -114,7 +114,7 @@ const AnimatedInput = ({
             `absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors duration-300`,
             isFocused 
               ? isDark ? 'text-white' : 'text-gray-900'
-              : isDark ? 'text-slate-500' : 'text-gray-400'
+              : isDark ? 'text-neutral-500' : 'text-gray-400'
           )} />
           <input
             type={type}
@@ -127,10 +127,10 @@ const AnimatedInput = ({
               `w-full pl-11 pr-4 py-3.5 border-2 rounded-xl text-sm transition-all duration-300 outline-none`,
               isFocused 
                 ? isDark 
-                  ? 'border-white shadow-lg shadow-slate-900/30 bg-slate-700 text-white'
+                  ? 'border-amber-500/60 shadow-lg shadow-amber-500/10 bg-[#1a1a1a] text-white'
                   : 'border-gray-900 shadow-lg shadow-gray-900/5 bg-white text-gray-900'
                 : isDark
-                  ? 'border-slate-600 hover:border-slate-500 bg-slate-700 text-white'
+                  ? 'border-white/10 hover:border-white/20 bg-[#1a1a1a] text-white'
                   : 'border-gray-200 hover:border-gray-300 bg-white text-gray-900'
             )}
           />
@@ -358,7 +358,7 @@ export default function LoginPage() {
       {/* Right Panel - Clean White Form */}
       <div className={cn(
         "flex-1 flex items-center justify-center p-6 relative overflow-hidden",
-        isDark ? "bg-slate-900" : "bg-white"
+        isDark ? "bg-[#0a0a0a]" : "bg-white"
       )}>
         {/* Subtle dot pattern */}
         <div className="absolute inset-0 opacity-[0.015]" style={{
@@ -369,8 +369,8 @@ export default function LoginPage() {
         {/* Subtle glow that follows mouse */}
         <motion.div
           className={cn(
-            "absolute w-[500px] h-[500px] rounded-full blur-3xl pointer-events-none opacity-60",
-            isDark ? "bg-gradient-to-r from-slate-800 to-slate-700" : "bg-gradient-to-r from-gray-100 to-gray-50"
+            "absolute w-[500px] h-[500px] rounded-full blur-3xl pointer-events-none opacity-40",
+            isDark ? "bg-gradient-to-r from-[#1a1a1a] to-[#141414]" : "bg-gradient-to-r from-gray-100 to-gray-50"
           )}
           animate={{
             x: mousePosition.x * 8,
@@ -405,7 +405,7 @@ export default function LoginPage() {
           <motion.div 
             className={cn(
               "rounded-3xl p-8 border shadow-xl",
-              isDark ? "bg-slate-800 border-slate-700 shadow-slate-900/50" : "bg-white border-gray-100 shadow-gray-100/50"
+              isDark ? "bg-[#141414] border-white/8 shadow-black/60" : "bg-white border-gray-100 shadow-gray-100/50"
             )}
             whileHover={{ boxShadow: isDark ? "0 25px 50px -12px rgba(0,0,0,0.3)" : "0 25px 50px -12px rgba(0,0,0,0.08)" }}
             transition={{ duration: 0.3 }}
@@ -422,7 +422,7 @@ export default function LoginPage() {
                 <h2 className={cn("text-2xl font-bold mb-1", isDark ? "text-white" : "text-gray-900")}>
                   {isLogin ? 'Welcome back' : 'Create account'}
                 </h2>
-                <p className={cn("mb-6 text-sm", isDark ? "text-slate-400" : "text-gray-500")}>
+                <p className={cn("mb-6 text-sm", isDark ? "text-neutral-400" : "text-gray-500")}>
                   {isLogin ? 'Sign in to continue tracking your hustle' : 'Start tracking your income today'}
                 </p>
               </motion.div>
@@ -492,7 +492,7 @@ export default function LoginPage() {
                 />
                 {/* Glow effect on hover */}
                 <motion.div
-                  className="absolute inset-0 bg-gradient-to-r from-purple-500/0 via-purple-500/10 to-purple-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                  className="absolute inset-0 bg-gradient-to-r from-amber-500/0 via-amber-400/8 to-amber-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
                 />
                 <span className="relative flex items-center gap-2">
                   {loading ? (
@@ -520,10 +520,10 @@ export default function LoginPage() {
             {/* Divider */}
             <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">
-                <div className={cn("w-full border-t", isDark ? "border-slate-700" : "border-gray-100")} />
+                <div className={cn("w-full border-t", isDark ? "border-white/8" : "border-gray-100")} />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className={cn("px-3 text-sm", isDark ? "bg-slate-800 text-slate-400" : "bg-white text-gray-400")}>or continue with</span>
+                <span className={cn("px-3 text-sm", isDark ? "bg-[#141414] text-neutral-500" : "bg-white text-gray-400")}>or continue with</span>
               </div>
             </div>
 
@@ -534,8 +534,8 @@ export default function LoginPage() {
               className={cn(
                 "w-full py-3.5 px-6 font-medium rounded-xl flex items-center justify-center gap-2 transition-all duration-300 border group shadow-sm hover:shadow-md text-sm",
                 isDark 
-                  ? "bg-gradient-to-r from-slate-700 via-slate-800 to-slate-700 hover:from-purple-900/50 hover:via-slate-800 hover:to-purple-900/50 text-slate-200 hover:text-purple-200 border-slate-600 hover:border-purple-700" 
-                  : "bg-gradient-to-r from-gray-50 via-white to-gray-50 hover:from-purple-50 hover:via-white hover:to-purple-50 text-gray-700 hover:text-purple-700 border-gray-200 hover:border-purple-300"
+                  ? "bg-gradient-to-r from-[#1a1a1a] via-[#141414] to-[#1a1a1a] hover:from-amber-950/40 hover:via-[#141414] hover:to-amber-950/40 text-neutral-200 hover:text-amber-200 border-white/10 hover:border-amber-500/40" 
+                  : "bg-gradient-to-r from-gray-50 via-white to-gray-50 hover:from-amber-50 hover:via-white hover:to-amber-50 text-gray-700 hover:text-amber-700 border-gray-200 hover:border-amber-300"
               )}
               whileHover={{ scale: 1.02, y: -1 }}
               whileTap={{ scale: 0.98 }}
@@ -544,14 +544,14 @@ export default function LoginPage() {
                 animate={{ rotate: [0, 15, -15, 0] }}
                 transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
               >
-                <Sparkles className="w-4 h-4 text-purple-500" />
+                <Sparkles className="w-4 h-4 text-amber-500" />
               </motion.span>
               Try Demo (No Account Needed)
             </motion.button>
 
             {/* Toggle */}
             <motion.p 
-              className={cn("text-center text-sm mt-6", isDark ? "text-slate-400" : "text-gray-500")}
+              className={cn("text-center text-sm mt-6", isDark ? "text-neutral-400" : "text-gray-500")}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.5 }}
@@ -560,14 +560,14 @@ export default function LoginPage() {
               <motion.button
                 onClick={() => setIsLogin(!isLogin)}
                 className={cn(
-                  "font-semibold hover:text-purple-600 transition-all duration-300 relative group",
+                  "font-semibold hover:text-amber-500 transition-all duration-300 relative group",
                   isDark ? "text-white" : "text-gray-900"
                 )}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
                 {isLogin ? 'Sign up' : 'Sign in'}
-                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-purple-500 to-indigo-500 group-hover:w-full transition-all duration-300" />
+                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-amber-400 to-orange-500 group-hover:w-full transition-all duration-300" />
               </motion.button>
             </motion.p>
           </motion.div>
@@ -582,18 +582,18 @@ export default function LoginPage() {
             <motion.div 
               className={cn(
                 "flex items-center gap-1.5 text-xs cursor-default transition-colors duration-300",
-                isDark ? "text-slate-500 hover:text-slate-300" : "text-gray-400 hover:text-gray-600"
+                isDark ? "text-neutral-500 hover:text-neutral-300" : "text-gray-400 hover:text-gray-600"
               )}
               whileHover={{ scale: 1.05, y: -1 }}
             >
               <Shield className="w-3.5 h-3.5" />
               <span>256-bit SSL</span>
             </motion.div>
-            <div className={cn("w-1 h-1 rounded-full", isDark ? "bg-slate-600" : "bg-gray-300")} />
+            <div className={cn("w-1 h-1 rounded-full", isDark ? "bg-neutral-600" : "bg-gray-300")} />
             <motion.div 
               className={cn(
                 "flex items-center gap-1.5 text-xs cursor-default transition-colors duration-300",
-                isDark ? "text-slate-500 hover:text-slate-300" : "text-gray-400 hover:text-gray-600"
+                isDark ? "text-neutral-500 hover:text-neutral-300" : "text-gray-400 hover:text-gray-600"
               )}
               whileHover={{ scale: 1.05, y: -1 }}
             >

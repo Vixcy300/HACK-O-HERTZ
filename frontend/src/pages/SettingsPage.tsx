@@ -137,8 +137,8 @@ export default function SettingsPage() {
       {/* ── Appearance ── */}
       <motion.div {...fadeUp} transition={{ delay: 0.075 }} className="bg-white rounded-2xl border border-gray-200 p-6 dark:bg-gray-800 dark:border-gray-700">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center dark:bg-purple-900/30">
-            <Moon className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+          <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center dark:bg-amber-900/20">
+            <Moon className="w-5 h-5 text-amber-600 dark:text-amber-400" />
           </div>
           <div>
             <h2 className="font-semibold text-gray-900 dark:text-white">Appearance</h2>
@@ -148,7 +148,7 @@ export default function SettingsPage() {
         <div className="flex items-center justify-between p-3 rounded-xl border border-gray-100 dark:border-gray-700">
           <div className="flex items-center gap-3">
             {local.darkMode ? (
-              <Moon className="w-5 h-5 text-purple-500" />
+              <Moon className="w-5 h-5 text-amber-500" />
             ) : (
               <Sun className="w-5 h-5 text-amber-500" />
             )}
@@ -166,7 +166,7 @@ export default function SettingsPage() {
               }
             }}
             className={`relative w-12 h-6 rounded-full transition-colors ${
-              local.darkMode ? 'bg-purple-500' : 'bg-gray-300'
+              local.darkMode ? 'bg-amber-500' : 'bg-gray-300'
             }`}
           >
             <span
@@ -268,7 +268,7 @@ export default function SettingsPage() {
           />
           {/* Push */}
           <ToggleRow
-            icon={<Smartphone className="w-4 h-4 text-purple-500" />}
+            icon={<Smartphone className="w-4 h-4 text-amber-500" />}
             label={t('settings_push_alerts')}
             checked={local.pushAlerts}
             onToggle={() => toggle('pushAlerts')}

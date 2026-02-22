@@ -238,7 +238,7 @@ export default function DashboardPage() {
         initial={{ opacity: 0, y: 20 }} 
         animate={{ opacity: 1, y: 0 }} 
         transition={{ delay: 0.1 }}
-        className="bg-gradient-to-br from-gray-900 via-slate-900 to-gray-900 rounded-3xl p-6 md:p-8 overflow-hidden relative"
+        className="bg-gradient-to-br from-[#111] via-[#0e0e0e] to-[#111] rounded-3xl p-6 md:p-8 overflow-hidden relative"
       >
         {/* Subtle grid pattern */}
         <div 
@@ -338,7 +338,7 @@ export default function DashboardPage() {
               </Link>
               <Link
                 to="/ai-chat"
-                className="inline-flex items-center gap-2 text-sm font-medium text-purple-600 hover:text-purple-700 transition-colors"
+                className="inline-flex items-center gap-2 text-sm font-medium text-amber-500 hover:text-amber-400 transition-colors"
               >
                 <Brain className="w-4 h-4" />
                 Chat with AI
@@ -546,7 +546,7 @@ export default function DashboardPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.8 }}
-          className="bg-gradient-to-br from-gray-900 via-slate-900 to-gray-900 rounded-2xl border border-gray-700 p-6 shadow-xl flex flex-col items-center justify-center relative overflow-hidden"
+          className="bg-gradient-to-br from-[#141414] via-[#111] to-[#141414] rounded-2xl border border-white/8 p-6 shadow-xl flex flex-col items-center justify-center relative overflow-hidden"
         >
           {/* subtle dot-grid overlay matching Spending Streaks card */}
           <div
