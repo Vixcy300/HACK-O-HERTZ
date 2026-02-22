@@ -1,10 +1,59 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Wallet, Mail, Lock, User, ArrowRight, Sparkles, TrendingUp, PiggyBank, Shield } from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
 import { cn } from '@/lib/utils'
 import toast from 'react-hot-toast'
+
+/* ── Floating particles on the form panel ── */
+const Particle = ({ delay, isDark }: { delay: number; isDark: boolean }) => {
+  const style = useMemo(() => ({
+    left: `${Math.random() * 100}%`,
+    width: Math.random() * 3 + 1.5,
+    height: Math.random() * 3 + 1.5,
+  }), [])
+  return (
+    <motion.span
+      className={cn("absolute rounded-full pointer-events-none", isDark ? "bg-white/[0.07]" : "bg-blue-400/[0.12]")}
+      style={{ ...style, bottom: -10 }}
+      animate={{ y: [0, -(window.innerHeight + 20)], opacity: [0, 1, 1, 0] }}
+      transition={{ duration: Math.random() * 6 + 8, delay, repeat: Infinity, ease: "linear" }}
+    />
+  )
+}
+const FloatingParticles = ({ isDark }: { isDark: boolean }) => {
+  const particles = useMemo(() => Array.from({ length: 18 }, (_, i) => i), [])
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {particles.map((i) => (
+        <Particle key={i} delay={i * 0.7} isDark={isDark} />
+      ))}
+    </div>
+  )
+}
+
+/* ── Animated counting number ── */
+function CountUp({ target, suffix = '' }: { target: string; suffix?: string }) {
+  const numeric = parseInt(target.replace(/[^0-9]/g, ''), 10)
+  const prefix = target.match(/^[^0-9]*/)?.[0] ?? ''
+  const rest = target.replace(/^[^0-9]*[0-9,]+/, '')
+  const [val, setVal] = useState(0)
+  useEffect(() => {
+    let frame: number
+    const duration = 2000
+    const start = performance.now()
+    const step = (now: number) => {
+      const t = Math.min((now - start) / duration, 1)
+      const eased = 1 - Math.pow(1 - t, 3)          // easeOutCubic
+      setVal(Math.round(eased * numeric))
+      if (t < 1) frame = requestAnimationFrame(step)
+    }
+    frame = requestAnimationFrame(step)
+    return () => cancelAnimationFrame(frame)
+  }, [numeric])
+  return <>{prefix}{val.toLocaleString('en-IN')}{rest}{suffix}</>
+}
 
 // Floating orb component for background - grayscale
 const FloatingOrb = ({ delay, duration, size, opacity, initialX, initialY }: {
@@ -291,8 +340,14 @@ export default function LoginPage() {
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2, duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
-                className="text-4xl font-bold leading-tight text-white"
+                className="text-4xl font-bold leading-tight text-white relative"
               >
+                {/* Shimmer sweep across headline */}
+                <motion.span
+                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -skew-x-12 pointer-events-none"
+                  animate={{ x: ['-120%', '120%'] }}
+                  transition={{ duration: 4, repeat: Infinity, repeatDelay: 5, ease: 'easeInOut' }}
+                />
                 Track Every Rupee.
                 <br />
                 <span className="text-gray-400">
@@ -336,7 +391,7 @@ export default function LoginPage() {
                   whileHover={{ scale: 1.05 }}
                   className="cursor-default"
                 >
-                  <p className="text-3xl font-bold text-white">{stat.value}</p>
+                  <p className="text-3xl font-bold text-white"><CountUp target={stat.value} /></p>
                   <p className="text-sm text-gray-600">{stat.label}</p>
                 </motion.div>
               ))}
@@ -360,6 +415,9 @@ export default function LoginPage() {
         "flex-1 flex items-center justify-center p-6 relative overflow-hidden",
         isDark ? "bg-[#0a0a0a]" : "bg-white"
       )}>
+        {/* Floating particles */}
+        <FloatingParticles isDark={isDark} />
+
         {/* Subtle dot pattern */}
         <div className="absolute inset-0 opacity-[0.015]" style={{
           backgroundImage: `radial-gradient(circle at 1px 1px, ${isDark ? 'white' : 'black'} 1px, transparent 0)`,
@@ -401,10 +459,22 @@ export default function LoginPage() {
             <span className={cn("text-xl font-bold", isDark ? "text-white" : "text-gray-900")}>Incomiq</span>
           </motion.div>
 
-          {/* Card */}
+          {/* Card with animated gradient ring */}
+          <div className="relative rounded-3xl p-[1px]">
+            {/* Rotating gradient border */}
+            <motion.div
+              className={cn(
+                "absolute -inset-[1px] rounded-3xl opacity-0 blur-[2px]",
+                isDark
+                  ? "bg-[conic-gradient(from_0deg,transparent_40%,rgba(251,191,36,0.25),transparent_60%)]"
+                  : "bg-[conic-gradient(from_0deg,transparent_40%,rgba(59,130,246,0.18),transparent_60%)]"
+              )}
+              animate={{ rotate: 360, opacity: [0.4, 0.7, 0.4] }}
+              transition={{ rotate: { duration: 6, repeat: Infinity, ease: 'linear' }, opacity: { duration: 3, repeat: Infinity, ease: 'easeInOut' } }}
+            />
           <motion.div 
             className={cn(
-              "rounded-3xl p-8 border shadow-xl",
+              "rounded-3xl p-8 border shadow-xl relative",
               isDark ? "bg-[#141414] border-white/8 shadow-black/60" : "bg-white border-gray-100 shadow-gray-100/50"
             )}
             whileHover={{ boxShadow: isDark ? "0 25px 50px -12px rgba(0,0,0,0.3)" : "0 25px 50px -12px rgba(0,0,0,0.08)" }}
@@ -577,6 +647,7 @@ export default function LoginPage() {
               </motion.button>
             </motion.p>
           </motion.div>
+          </div>{/* close gradient ring wrapper */}
 
           {/* Trust badges - Enhanced hover */}
           <motion.div 
