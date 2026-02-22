@@ -323,14 +323,28 @@ export default function LoginPage() {
             transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
             className="flex items-center gap-3"
           >
-            <motion.div 
-              className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center"
-              whileHover={{ scale: 1.05, rotate: 3 }}
-              transition={{ type: "spring", stiffness: 400 }}
-            >
-              <Wallet className="w-6 h-6 text-black" />
-            </motion.div>
+            <div className="relative">
+              {/* Breathing glow behind logo */}
+              <motion.div
+                className="absolute inset-0 rounded-2xl bg-white/20 blur-xl"
+                animate={{ scale: [1, 1.5, 1], opacity: [0.3, 0.6, 0.3] }}
+                transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+              />
+              <motion.div 
+                className="relative w-12 h-12 rounded-2xl bg-white flex items-center justify-center"
+                whileHover={{ scale: 1.05, rotate: 3 }}
+                transition={{ type: "spring", stiffness: 400 }}
+              >
+                <Wallet className="w-6 h-6 text-black" />
+              </motion.div>
+            </div>
             <span className="text-2xl font-bold tracking-tight text-white">Incomiq</span>
+            {/* Live pulse dot */}
+            <motion.span
+              className="w-2 h-2 rounded-full bg-emerald-400"
+              animate={{ scale: [1, 1.4, 1], opacity: [1, 0.5, 1] }}
+              transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+            />
           </motion.div>
 
           {/* Main content */}
@@ -361,11 +375,23 @@ export default function LoginPage() {
                 className="text-base text-gray-500 mt-4 max-w-md leading-relaxed"
               >
                 India's smartest income & expense tracker with AI-powered savings suggestions and personalized investment recommendations.
+                <motion.span
+                  className="inline-block w-[2px] h-[1em] ml-1 align-middle bg-gray-400 rounded-full"
+                  animate={{ opacity: [1, 0, 1] }}
+                  transition={{ duration: 1, repeat: Infinity, ease: 'steps(2)' }}
+                />
               </motion.p>
             </div>
 
-            {/* Feature cards */}
-            <div className="space-y-3">
+            {/* Feature cards with connector */}
+            <div className="relative space-y-3">
+              {/* Vertical connector line */}
+              <motion.div
+                className="absolute left-[28px] top-[52px] w-[1.5px] bg-gradient-to-b from-white/15 via-white/8 to-transparent pointer-events-none"
+                initial={{ height: 0 }}
+                animate={{ height: 'calc(100% - 52px)' }}
+                transition={{ delay: 0.6, duration: 0.8, ease: 'easeOut' }}
+              />
               {features.map((feature, i) => (
                 <FeatureCard key={feature.title} {...feature} delay={0.5 + i * 0.1} />
               ))}
@@ -408,6 +434,13 @@ export default function LoginPage() {
             SDG 1: No Poverty · SDG 8: Decent Work · SDG 10: Reduced Inequality
           </motion.p>
         </motion.div>
+
+        {/* Ambient horizontal light beam across left panel */}
+        <motion.div
+          className="absolute left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-white/15 to-transparent pointer-events-none z-20"
+          animate={{ top: ['15%', '85%', '15%'] }}
+          transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }}
+        />
       </div>
 
       {/* Right Panel - Clean White Form */}
@@ -460,17 +493,28 @@ export default function LoginPage() {
           </motion.div>
 
           {/* Card with animated gradient ring */}
-          <div className="relative rounded-3xl p-[1px]">
-            {/* Rotating gradient border */}
+          <div className="relative rounded-3xl p-[2px]">
+            {/* Rotating gradient border — outer soft glow */}
             <motion.div
               className={cn(
-                "absolute -inset-[1px] rounded-3xl opacity-0 blur-[2px]",
+                "absolute -inset-[3px] rounded-[26px] blur-[6px]",
                 isDark
-                  ? "bg-[conic-gradient(from_0deg,transparent_40%,rgba(251,191,36,0.25),transparent_60%)]"
-                  : "bg-[conic-gradient(from_0deg,transparent_40%,rgba(59,130,246,0.18),transparent_60%)]"
+                  ? "bg-[conic-gradient(from_0deg,transparent_25%,rgba(251,191,36,0.35),rgba(245,158,11,0.15),transparent_75%)]"
+                  : "bg-[conic-gradient(from_0deg,transparent_25%,rgba(59,130,246,0.30),rgba(99,102,241,0.12),transparent_75%)]"
               )}
-              animate={{ rotate: 360, opacity: [0.4, 0.7, 0.4] }}
-              transition={{ rotate: { duration: 6, repeat: Infinity, ease: 'linear' }, opacity: { duration: 3, repeat: Infinity, ease: 'easeInOut' } }}
+              animate={{ rotate: 360 }}
+              transition={{ duration: 5, repeat: Infinity, ease: 'linear' }}
+            />
+            {/* Rotating gradient border — inner crisp ring */}
+            <motion.div
+              className={cn(
+                "absolute -inset-[1px] rounded-3xl",
+                isDark
+                  ? "bg-[conic-gradient(from_180deg,transparent_30%,rgba(251,191,36,0.45),transparent_70%)]"
+                  : "bg-[conic-gradient(from_180deg,transparent_30%,rgba(59,130,246,0.35),transparent_70%)]"
+              )}
+              animate={{ rotate: 360, opacity: [0.6, 1, 0.6] }}
+              transition={{ rotate: { duration: 5, repeat: Infinity, ease: 'linear' }, opacity: { duration: 2.5, repeat: Infinity, ease: 'easeInOut' } }}
             />
           <motion.div 
             className={cn(
