@@ -137,8 +137,8 @@ export default function SettingsPage() {
       {/* ── Appearance ── */}
       <motion.div {...fadeUp} transition={{ delay: 0.075 }} className="bg-white rounded-2xl border border-gray-200 p-6 dark:bg-gray-800 dark:border-gray-700">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center dark:bg-amber-900/20">
-            <Moon className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+          <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-amber-900/20 flex items-center justify-center">
+            <Moon className="w-5 h-5 text-blue-600 dark:text-amber-400" />
           </div>
           <div>
             <h2 className="font-semibold text-gray-900 dark:text-white">Appearance</h2>
@@ -150,7 +150,7 @@ export default function SettingsPage() {
             {local.darkMode ? (
               <Moon className="w-5 h-5 text-amber-500" />
             ) : (
-              <Sun className="w-5 h-5 text-amber-500" />
+              <Sun className="w-5 h-5 text-blue-500" />
             )}
             <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Dark Mode</span>
           </div>
@@ -166,7 +166,7 @@ export default function SettingsPage() {
               }
             }}
             className={`relative w-12 h-6 rounded-full transition-colors ${
-              local.darkMode ? 'bg-amber-500' : 'bg-gray-300'
+              local.darkMode ? 'bg-amber-500' : 'bg-blue-500'
             }`}
           >
             <span
@@ -249,8 +249,8 @@ export default function SettingsPage() {
       {/* ── Notifications ── */}
       <motion.div {...fadeUp} transition={{ delay: 0.15 }} className="bg-white rounded-2xl border border-gray-200 p-6">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center">
-            <Bell className="w-5 h-5 text-amber-600" />
+          <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-amber-50 flex items-center justify-center">
+            <Bell className="w-5 h-5 text-blue-600 dark:text-amber-600" />
           </div>
           <div>
             <h2 className="font-semibold text-gray-900">{t('settings_notifications')}</h2>
@@ -268,7 +268,7 @@ export default function SettingsPage() {
           />
           {/* Push */}
           <ToggleRow
-            icon={<Smartphone className="w-4 h-4 text-amber-500" />}
+            icon={<Smartphone className="w-4 h-4 text-blue-500 dark:text-amber-500" />}
             label={t('settings_push_alerts')}
             checked={local.pushAlerts}
             onToggle={() => toggle('pushAlerts')}

@@ -92,6 +92,7 @@ const DIRTY_THRESHOLD_PCT = 0.3 // If single expense > 30% of income = dirty
 export default function ExpensesPage() {
   const { t } = useTranslation()
   const { settings, updateSettings } = useAppStore()
+  const isDark = settings.darkMode
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [loading, setLoading] = useState(true)
   const [deleting, setDeleting] = useState<string | null>(null)
@@ -292,7 +293,9 @@ export default function ExpensesPage() {
       >
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 flex items-center justify-center shadow-sm">
+            <div className={`w-8 h-8 rounded-xl bg-gradient-to-r flex items-center justify-center shadow-sm ${
+              isDark ? 'from-amber-500 to-orange-500' : 'from-blue-500 to-indigo-600'
+            }`}>
               <TrendingDown className="w-4 h-4 text-white" />
             </div>
             <h3 className="font-semibold text-gray-900 dark:text-white text-sm">{t('exp_category_limits')}</h3>
@@ -304,7 +307,11 @@ export default function ExpensesPage() {
               setEditLimits(settings.categoryLimits)
               setShowLimitsModal(true)
             }}
-            className="flex items-center gap-1 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-700/50 text-xs font-semibold rounded-lg transition-all"
+            className={`flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+              isDark
+                ? 'bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-700/50'
+                : 'bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200'
+            }`}
           >
             <Edit3 className="w-3 h-3" />
             Edit Limits

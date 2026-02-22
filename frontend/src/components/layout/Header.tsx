@@ -62,7 +62,7 @@ export default function Header() {
             "text-xs border rounded-lg px-2 py-1.5 font-medium cursor-pointer transition-colors focus:outline-none focus:ring-1",
             isDark 
               ? "bg-[#1a1a1a] border-white/10 text-neutral-300 hover:bg-[#242424] focus:ring-amber-500/40" 
-              : "bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100 focus:ring-amber-300"
+              : "bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100 focus:ring-blue-300"
           )}
         >
           {(Object.entries(localeNames) as [Locale, string][]).map(([key, name]) => (
@@ -80,7 +80,12 @@ export default function Header() {
           "flex items-center gap-3 pl-3 border-l",
           isDark ? "border-white/[0.07]" : "border-gray-200"
         )}>
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center text-white font-semibold text-sm shadow-md shadow-amber-500/20">
+          <div className={cn(
+            "w-8 h-8 rounded-full bg-gradient-to-br flex items-center justify-center text-white font-semibold text-sm shadow-md",
+            isDark
+              ? "from-amber-500 to-orange-500 shadow-amber-500/20"
+              : "from-blue-500 to-indigo-600 shadow-blue-500/20"
+          )}>
             {user?.name?.charAt(0).toUpperCase() || 'U'}
           </div>
           <div className="hidden md:block">

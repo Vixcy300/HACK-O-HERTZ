@@ -79,7 +79,7 @@ export default function HealthScoreGauge({ score, label = 'Health Score', size =
           >
             {normalizedScore}
           </motion.span>
-          <span className={`text-[10px] uppercase tracking-wide ${darkBg ? 'text-gray-400' : 'text-gray-400'}`}>{label}</span>
+          <span className={`text-[10px] uppercase tracking-wide ${darkBg ? 'text-gray-400' : 'text-gray-500'}`}>{label}</span>
         </div>
       </div>
       

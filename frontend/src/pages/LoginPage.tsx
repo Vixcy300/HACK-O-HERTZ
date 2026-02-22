@@ -492,7 +492,10 @@ export default function LoginPage() {
                 />
                 {/* Glow effect on hover */}
                 <motion.div
-                  className="absolute inset-0 bg-gradient-to-r from-amber-500/0 via-amber-400/8 to-amber-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                  className={cn(
+                    "absolute inset-0 bg-gradient-to-r opacity-0 group-hover:opacity-100 transition-opacity duration-500",
+                    isDark ? "from-amber-500/0 via-amber-400/8 to-amber-500/0" : "from-blue-500/0 via-blue-400/8 to-blue-500/0"
+                  )}
                 />
                 <span className="relative flex items-center gap-2">
                   {loading ? (
@@ -535,7 +538,7 @@ export default function LoginPage() {
                 "w-full py-3.5 px-6 font-medium rounded-xl flex items-center justify-center gap-2 transition-all duration-300 border group shadow-sm hover:shadow-md text-sm",
                 isDark 
                   ? "bg-gradient-to-r from-[#1a1a1a] via-[#141414] to-[#1a1a1a] hover:from-amber-950/40 hover:via-[#141414] hover:to-amber-950/40 text-neutral-200 hover:text-amber-200 border-white/10 hover:border-amber-500/40" 
-                  : "bg-gradient-to-r from-gray-50 via-white to-gray-50 hover:from-amber-50 hover:via-white hover:to-amber-50 text-gray-700 hover:text-amber-700 border-gray-200 hover:border-amber-300"
+                  : "bg-gradient-to-r from-gray-50 via-white to-gray-50 hover:from-blue-50 hover:via-white hover:to-blue-50 text-gray-700 hover:text-blue-700 border-gray-200 hover:border-blue-300"
               )}
               whileHover={{ scale: 1.02, y: -1 }}
               whileTap={{ scale: 0.98 }}
@@ -544,7 +547,7 @@ export default function LoginPage() {
                 animate={{ rotate: [0, 15, -15, 0] }}
                 transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
               >
-                <Sparkles className="w-4 h-4 text-amber-500" />
+                <Sparkles className={cn("w-4 h-4", isDark ? "text-amber-500" : "text-blue-500")} />
               </motion.span>
               Try Demo (No Account Needed)
             </motion.button>
@@ -560,14 +563,17 @@ export default function LoginPage() {
               <motion.button
                 onClick={() => setIsLogin(!isLogin)}
                 className={cn(
-                  "font-semibold hover:text-amber-500 transition-all duration-300 relative group",
-                  isDark ? "text-white" : "text-gray-900"
+                  "font-semibold transition-all duration-300 relative group",
+                  isDark ? "text-white hover:text-amber-500" : "text-gray-900 hover:text-blue-600"
                 )}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
                 {isLogin ? 'Sign up' : 'Sign in'}
-                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-amber-400 to-orange-500 group-hover:w-full transition-all duration-300" />
+                <span className={cn(
+                  "absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r group-hover:w-full transition-all duration-300",
+                  isDark ? "from-amber-400 to-orange-500" : "from-blue-400 to-indigo-500"
+                )} />
               </motion.button>
             </motion.p>
           </motion.div>

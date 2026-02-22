@@ -16,9 +16,10 @@ export default function AppLayout() {
         <main
           key={location.pathname}
           className={cn(
-            "flex-1 overflow-y-auto p-6 page-enter",
+            "flex-1 overflow-y-auto p-6 page-enter scroll-smooth",
             settings.darkMode ? "bg-[#0a0a0a]" : "bg-gray-50"
           )}
+          style={{ scrollBehavior: 'smooth', WebkitOverflowScrolling: 'touch' }}
         >
           <Outlet />
         </main>

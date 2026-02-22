@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { Flame, Trophy, TrendingDown, Calendar, Zap } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useAppStore } from '@/store/useAppStore'
 
 interface StreakData {
   currentStreak: number
@@ -44,10 +45,14 @@ const streakConfig = {
 }
 
 export default function SpendingStreaks({ streaks }: { streaks: StreakData[] }) {
+  const isDark = useAppStore((s) => s.settings.darkMode)
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 shadow-lg">
       <div className="flex items-center gap-2 mb-4">
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-r from-orange-500 to-red-500 flex items-center justify-center shadow-md">
+        <div className={cn(
+          "w-9 h-9 rounded-xl bg-gradient-to-r flex items-center justify-center shadow-md",
+          isDark ? "from-orange-500 to-red-500" : "from-blue-500 to-indigo-600"
+        )}>
           <Flame className="w-5 h-5 text-white" />
         </div>
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Spending Streaks</h3>

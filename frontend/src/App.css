@@ -122,12 +122,17 @@
   --nav-color-end: #F5F7FA;
 }
 
-/* Active state with amber glow */
-.sidebar-nav-item.active {
+/* Active state with amber glow (dark mode) */
+.dark .sidebar-nav-item.active {
   background: linear-gradient(135deg, rgba(245,158,11,0.12), rgba(251,191,36,0.06));
 }
 
-.sidebar-nav-item.active::after {
+/* Active state with blue (light mode) */
+.sidebar-nav-item.active {
+  background: linear-gradient(135deg, rgba(59,130,246,0.08), rgba(99,102,241,0.04));
+}
+
+.dark .sidebar-nav-item.active::after {
   content: '';
   position: absolute;
   left: 0;
@@ -138,6 +143,19 @@
   background: linear-gradient(180deg, #fbbf24, #f59e0b);
   border-radius: 0 4px 4px 0;
   box-shadow: 0 0 10px rgba(251,191,36,0.5);
+}
+
+.sidebar-nav-item.active::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 60%;
+  background: linear-gradient(180deg, #3b82f6, #6366f1);
+  border-radius: 0 4px 4px 0;
+  box-shadow: 0 0 8px rgba(59,130,246,0.3);
 }
 
 /* ===== SIDEBAR SLIDE ANIMATION ===== */

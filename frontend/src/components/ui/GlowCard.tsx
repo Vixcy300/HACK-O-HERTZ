@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import type { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
+import { useAppStore } from '@/store/useAppStore'
 
 interface GlowCardProps {
   children: ReactNode
@@ -26,6 +27,8 @@ export default function GlowCard({
   hoverable = true,
   onClick,
 }: GlowCardProps) {
+  const isDark = useAppStore((s) => s.settings.darkMode)
+
   return (
     <motion.div
       className={cn('glow-card-wrapper group relative', className)}
@@ -37,7 +40,8 @@ export default function GlowCard({
       {/* Animated gradient background (skewed) */}
       <div
         className={cn(
-          'absolute top-0 left-[50px] w-1/2 h-full rounded-xl bg-gradient-to-br opacity-80',
+          'absolute top-0 left-[50px] w-1/2 h-full rounded-xl bg-gradient-to-br',
+          isDark ? 'opacity-80' : 'opacity-50',
           'transform skew-x-[15deg] transition-all duration-500 ease-out',
           'group-hover:skew-x-0 group-hover:left-5 group-hover:w-[calc(100%-40px)]',
           gradients[variant]
@@ -48,7 +52,8 @@ export default function GlowCard({
       <div
         className={cn(
           'absolute top-0 left-[50px] w-1/2 h-full rounded-xl bg-gradient-to-br',
-          'transform skew-x-[15deg] blur-[30px] opacity-60 transition-all duration-500 ease-out',
+          'transform skew-x-[15deg] blur-[30px] transition-all duration-500 ease-out',
+          isDark ? 'opacity-60' : 'opacity-30',
           'group-hover:skew-x-0 group-hover:left-5 group-hover:w-[calc(100%-40px)]',
           gradients[variant]
         )}
@@ -102,8 +107,9 @@ export default function GlowCard({
       <div
         className={cn(
           'relative z-20 p-5 rounded-xl transition-all duration-500',
-          'bg-white/5 backdrop-blur-md shadow-xl',
-          'border border-white/10',
+          isDark
+            ? 'bg-white/5 backdrop-blur-md shadow-xl border border-white/10'
+            : 'bg-white/90 backdrop-blur-md shadow-lg border border-gray-200/80',
           'group-hover:-translate-x-2 group-hover:py-8'
         )}
       >
@@ -131,18 +137,22 @@ export function GlowMetricCard({
   variant?: 'orange' | 'blue' | 'green' | 'purple' | 'pink' | 'default'
   className?: string
 }) {
+  const isDark = useAppStore((s) => s.settings.darkMode)
+
   return (
     <GlowCard variant={variant} className={className}>
       <div className="flex items-start justify-between">
         <div className="space-y-2">
-          <p className="text-sm text-white/60 font-medium">{label}</p>
-          <p className="text-2xl font-bold text-white tracking-tight">{value}</p>
-          {subValue && <p className="text-xs text-white/50">{subValue}</p>}
+          <p className={cn('text-sm font-medium', isDark ? 'text-white/60' : 'text-gray-500')}>{label}</p>
+          <p className={cn('text-2xl font-bold tracking-tight', isDark ? 'text-white' : 'text-gray-900')}>{value}</p>
+          {subValue && <p className={cn('text-xs', isDark ? 'text-white/50' : 'text-gray-400')}>{subValue}</p>}
           {trend && (
             <div
               className={cn(
                 'inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full',
-                trend.positive ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'
+                trend.positive
+                  ? isDark ? 'bg-emerald-500/20 text-emerald-300' : 'bg-emerald-100 text-emerald-700'
+                  : isDark ? 'bg-rose-500/20 text-rose-300' : 'bg-rose-100 text-rose-700'
               )}
             >
               {trend.positive ? '↑' : '↓'} {Math.abs(trend.value)}%
@@ -152,10 +162,10 @@ export function GlowMetricCard({
         <div
           className={cn(
             'w-12 h-12 rounded-xl flex items-center justify-center',
-            'bg-white/10 backdrop-blur-sm'
+            isDark ? 'bg-white/10 backdrop-blur-sm' : 'bg-blue-50 border border-blue-100'
           )}
         >
-          <Icon className="w-6 h-6 text-white" />
+          <Icon className={cn('w-6 h-6', isDark ? 'text-white' : 'text-blue-600')} />
         </div>
       </div>
     </GlowCard>

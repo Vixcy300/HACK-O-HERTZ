@@ -67,12 +67,12 @@ export default function Sidebar() {
           'absolute -right-3 top-1/2 -translate-y-1/2 z-20 w-6 h-6 rounded-full flex items-center justify-center transition-all duration-300 ease-out group hover:scale-110 active:scale-95',
           isDark
             ? 'bg-[#161616] border border-white/8 hover:bg-[#242424] hover:border-amber-500/40'
-            : 'bg-white border border-gray-200 shadow-sm hover:border-amber-400 hover:bg-amber-50'
+            : 'bg-white border border-gray-200 shadow-sm hover:border-blue-400 hover:bg-blue-50'
         )}
       >
         <ChevronLeft className={cn(
           "w-4 h-4 transition-all duration-300",
-          isDark ? "text-gray-500 group-hover:text-amber-400" : "text-gray-500 group-hover:text-amber-500",
+          isDark ? "text-gray-500 group-hover:text-amber-400" : "text-gray-500 group-hover:text-blue-500",
           !sidebarOpen && "rotate-180"
         )} />
       </button>
@@ -83,7 +83,12 @@ export default function Sidebar() {
         isDark ? 'border-b border-white/5' : 'border-b border-gray-100'
       )}>
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/20 flex-shrink-0">
+          <div className={cn(
+            "w-10 h-10 rounded-xl bg-gradient-to-br flex items-center justify-center shadow-lg flex-shrink-0",
+            isDark
+              ? "from-amber-500 to-orange-500 shadow-amber-500/20"
+              : "from-blue-500 to-indigo-600 shadow-blue-500/20"
+          )}>
             <Wallet className="w-5 h-5 text-white" />
           </div>
           <span className={cn(
@@ -114,10 +119,10 @@ export default function Sidebar() {
                 isActive
                   ? isDark
                     ? 'bg-gradient-to-r from-amber-500/15 to-orange-500/10 text-white border border-amber-500/25'
-                    : 'bg-gradient-to-r from-amber-50 to-orange-50 text-amber-700 border border-amber-200'
+                    : 'bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 border border-blue-200/80'
                   : isDark
                     ? 'text-gray-500 hover:text-white hover:bg-white/5'
-                    : 'text-gray-600 hover:text-amber-700 hover:bg-amber-50/60'
+                    : 'text-gray-600 hover:text-blue-700 hover:bg-blue-50/60'
               )
             }
           >
@@ -125,7 +130,7 @@ export default function Sidebar() {
               "w-5 h-5 flex-shrink-0 transition-all duration-300",
               isDark
                 ? "group-hover:text-amber-400 group-hover:drop-shadow-[0_0_8px_rgba(251,191,36,0.45)]"
-                : "group-hover:text-amber-500"
+                : "group-hover:text-blue-500"
             )} />
             <span className={cn(
               "whitespace-nowrap transition-all duration-500 ease-out",

@@ -57,6 +57,7 @@ const defaultStreaks = [
 export default function DashboardPage() {
   const { t } = useTranslation()
   const { settings } = useAppStore()
+  const isDark = settings.darkMode
   const [metrics, setMetrics] = useState<DashboardMetrics>({
     total_income: 0,
     total_expenses: 0,
@@ -238,21 +239,27 @@ export default function DashboardPage() {
         initial={{ opacity: 0, y: 20 }} 
         animate={{ opacity: 1, y: 0 }} 
         transition={{ delay: 0.1 }}
-        className="bg-gradient-to-br from-[#111] via-[#0e0e0e] to-[#111] rounded-3xl p-6 md:p-8 overflow-hidden relative"
+        className={`rounded-3xl p-6 md:p-8 overflow-hidden relative ${
+          isDark
+            ? 'bg-gradient-to-br from-[#111] via-[#0e0e0e] to-[#111]'
+            : 'bg-gradient-to-br from-white via-blue-50/40 to-white border border-gray-200/80 shadow-lg'
+        }`}
       >
         {/* Subtle grid pattern */}
         <div 
           className="absolute inset-0 opacity-[0.03]"
           style={{
-            backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
+            backgroundImage: isDark
+              ? `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`
+              : `linear-gradient(rgba(59,130,246,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(59,130,246,0.06) 1px, transparent 1px)`,
             backgroundSize: '40px 40px',
           }}
         />
         
         <div className="relative z-10">
           <div className="flex items-center gap-2 mb-6">
-            <Sparkles className="w-5 h-5 text-amber-400" />
-            <h2 className="text-xl font-bold text-white">Quick Stats</h2>
+            <Sparkles className={`w-5 h-5 ${isDark ? 'text-amber-400' : 'text-blue-500'}`} />
+            <h2 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>Quick Stats</h2>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -546,16 +553,25 @@ export default function DashboardPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.8 }}
-          className="bg-gradient-to-br from-[#141414] via-[#111] to-[#141414] rounded-2xl border border-white/8 p-6 shadow-xl flex flex-col items-center justify-center relative overflow-hidden"
+          className={`rounded-2xl p-6 shadow-xl flex flex-col items-center justify-center relative overflow-hidden ${
+            isDark
+              ? 'bg-gradient-to-br from-[#141414] via-[#111] to-[#141414] border border-white/8'
+              : 'bg-gradient-to-br from-white via-blue-50/30 to-white border border-gray-200/80'
+          }`}
         >
           {/* subtle dot-grid overlay matching Spending Streaks card */}
           <div
             className="absolute inset-0 opacity-[0.04]"
-            style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '24px 24px' }}
+            style={{
+              backgroundImage: isDark
+                ? 'radial-gradient(circle, #fff 1px, transparent 1px)'
+                : 'radial-gradient(circle, #3b82f6 0.5px, transparent 0.5px)',
+              backgroundSize: '24px 24px'
+            }}
           />
-          <h3 className="text-lg font-semibold text-white mb-4 relative z-10">Financial Health</h3>
+          <h3 className={`text-lg font-semibold mb-4 relative z-10 ${isDark ? 'text-white' : 'text-gray-900'}`}>Financial Health</h3>
           <div className="relative z-10">
-            <HealthScoreGauge score={calculateHealthScore()} size="lg" darkBg />
+            <HealthScoreGauge score={calculateHealthScore()} size="lg" darkBg={isDark} />
           </div>
         </motion.div>
 

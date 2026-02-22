@@ -76,7 +76,8 @@ const RISK_CONFIG: Record<string, { label: string; bg: string; text: string; bor
 }
 
 export default function SMSAlertsPage() {
-  useAppStore()
+  const { settings } = useAppStore()
+  const isDark = settings.darkMode
   const [records, setRecords] = useState<SMSRecord[]>([])
   const [liveAlerts, setLiveAlerts] = useState<SMSAlertEvent[]>([])
   const [activeClarification, setActiveClarification] = useState<ReturnType<typeof useWebSocket>['pendingClarifications'][0] | null>(null)
@@ -240,7 +241,9 @@ export default function SMSAlertsPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/20">
+              <div className={`w-10 h-10 rounded-2xl bg-gradient-to-br flex items-center justify-center shadow-lg ${
+                isDark ? 'from-amber-500 to-orange-500 shadow-amber-500/20' : 'from-blue-500 to-indigo-600 shadow-blue-500/20'
+              }`}>
                 <Smartphone className="text-white" size={20} />
               </div>
               Live SMS Alerts
@@ -275,7 +278,7 @@ export default function SMSAlertsPage() {
         {/* ── Stats Cards ── */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
-            { label: 'Total SMS', value: stats.total, icon: MessageSquare, gradient: 'from-amber-500 to-orange-500', lightBg: 'bg-amber-50/80', lightBorder: 'border-amber-200/60' },
+            { label: 'Total SMS', value: stats.total, icon: MessageSquare, gradient: isDark ? 'from-amber-500 to-orange-500' : 'from-blue-500 to-indigo-600', lightBg: isDark ? 'bg-amber-50/80' : 'bg-blue-50/80', lightBorder: isDark ? 'border-amber-200/60' : 'border-blue-200/60' },
             { label: 'Credits', value: stats.credits, icon: TrendingUp, gradient: 'from-emerald-500 to-teal-600', lightBg: 'bg-emerald-50/80', lightBorder: 'border-emerald-200/60' },
             { label: 'Debits', value: stats.debits, icon: TrendingDown, gradient: 'from-rose-500 to-red-600', lightBg: 'bg-rose-50/80', lightBorder: 'border-rose-200/60' },
             { label: 'High Risk', value: stats.highRisk, icon: AlertTriangle, gradient: 'from-orange-500 to-amber-600', lightBg: 'bg-orange-50/80', lightBorder: 'border-orange-200/60' },
