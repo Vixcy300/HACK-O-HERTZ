@@ -14,7 +14,72 @@ import { ArrowUpDown, Trash2, ChevronLeft, ChevronRight, Search, TrendingUp, Bri
 import { formatCurrency, getRelativeTime, cn } from '@/lib/utils'
 import type { Income } from '@/types'
 
-// Category icons mapping for rich display
+// Map source name keywords → actual company domain (for favicon lookup)
+const COMPANY_DOMAINS: Record<string, string> = {
+  uber: 'uber.com',
+  zepto: 'zeptonow.com',
+  swiggy: 'swiggy.com',
+  zomato: 'zomato.com',
+  rapido: 'rapido.bike',
+  dunzo: 'dunzo.com',
+  ola: 'olacabs.com',
+  amazon: 'amazon.in',
+  flipkart: 'flipkart.com',
+  meesho: 'meesho.com',
+  blinkit: 'blinkit.com',
+  bigbasket: 'bigbasket.com',
+  instamart: 'swiggy.com',
+  youtube: 'youtube.com',
+  udemy: 'udemy.com',
+  fiverr: 'fiverr.com',
+  upwork: 'upwork.com',
+  freelancer: 'freelancer.com',
+  groww: 'groww.in',
+  phonepe: 'phonepe.com',
+  paytm: 'paytm.com',
+  google: 'google.com',
+  meta: 'meta.com',
+  instagram: 'instagram.com',
+  porter: 'porter.in',
+  borzo: 'borzo.com',
+  shadowfax: 'shadowfax.in',
+  shiprocket: 'shiprocket.in',
+}
+
+// Brand colours for initial-badge fallback (no network needed)
+const BRAND_COLORS: Record<string, string> = {
+  uber: '#000000', zepto: '#8B5CF6', swiggy: '#FC8019', zomato: '#E23744',
+  rapido: '#FFD700', dunzo: '#00B140', ola: '#F5A623', amazon: '#FF9900',
+  flipkart: '#2874F0', meesho: '#F43397', blinkit: '#F8CC1B', bigbasket: '#84C225',
+  youtube: '#FF0000', udemy: '#A435F0', fiverr: '#1DBF73', upwork: '#14A800',
+  freelancer: '#29B2FE', groww: '#00D09C', phonepe: '#5F259F', paytm: '#002970',
+  google: '#4285F4', instagram: '#E1306C', meta: '#0668E1',
+}
+
+/** Google Favicon Service URL — very reliable, served from Google's CDN */
+function getFaviconUrl(domain: string): string {
+  return `https://www.google.com/s2/favicons?domain=${domain}&sz=64`
+}
+
+/** Find best domain match for a source name, returns null if unknown */
+function getDomain(sourceName: string): string | null {
+  const key = sourceName.toLowerCase().replace(/[^a-z0-9]/g, '')
+  for (const [k, domain] of Object.entries(COMPANY_DOMAINS)) {
+    if (key.includes(k) || (k.length >= 4 && key.startsWith(k.substring(0, 4)))) return domain
+  }
+  return null
+}
+
+/** Get brand colour for initial badge */
+function getBrandColor(sourceName: string): string {
+  const key = sourceName.toLowerCase()
+  for (const [k, color] of Object.entries(BRAND_COLORS)) {
+    if (key.includes(k)) return color
+  }
+  return '#6366F1' // indigo default
+}
+
+// Category icons & gradient maps (also used in the category badge column)
 const categoryIcons: Record<string, React.ReactNode> = {
   freelance: <Briefcase className="w-4 h-4" />,
   delivery: <Package className="w-4 h-4" />,
@@ -23,8 +88,6 @@ const categoryIcons: Record<string, React.ReactNode> = {
   tutoring: <BookOpen className="w-4 h-4" />,
   ecommerce: <ShoppingBag className="w-4 h-4" />,
 }
-
-// Category colors with gradients
 const categoryGradients: Record<string, string> = {
   freelance: 'from-blue-500 to-indigo-500',
   delivery: 'from-orange-500 to-red-500',
@@ -32,6 +95,44 @@ const categoryGradients: Record<string, string> = {
   rideshare: 'from-green-500 to-emerald-500',
   tutoring: 'from-cyan-500 to-blue-500',
   ecommerce: 'from-amber-500 to-orange-500',
+}
+
+/** Source logo with Google favicon + branded-initial fallback */
+function SourceLogo({ name, category }: { name: string; category: string }) {
+  const [failed, setFailed] = useState(false)
+  const domain = getDomain(name)
+
+  if (domain && !failed) {
+    return (
+      <img
+        src={getFaviconUrl(domain)}
+        alt={name}
+        onError={() => setFailed(true)}
+        className="w-8 h-8 rounded-lg object-contain bg-white border border-gray-100 shadow-sm p-0.5"
+      />
+    )
+  }
+
+  // Fallback: branded initial badge — zero network requests
+  const initial = name.charAt(0).toUpperCase()
+  if (domain || name) {
+    const bg = getBrandColor(name)
+    return (
+      <div
+        className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold shadow-sm"
+        style={{ backgroundColor: bg }}
+      >
+        {initial}
+      </div>
+    )
+  }
+
+  // Last resort: category gradient icon
+  return (
+    <div className={`w-8 h-8 rounded-lg bg-gradient-to-r ${categoryGradients[category] || 'from-gray-500 to-gray-600'} flex items-center justify-center text-white shadow-sm`}>
+      {categoryIcons[category] || <TrendingUp className="w-4 h-4" />}
+    </div>
+  )
 }
 
 interface IncomeTableProps {
@@ -67,9 +168,7 @@ export default function IncomeTable({ incomes, onDelete }: IncomeTableProps) {
         header: 'Source',
         cell: ({ row }) => (
           <div className="flex items-center gap-2">
-            <div className={`w-8 h-8 rounded-lg bg-gradient-to-r ${categoryGradients[row.original.category] || 'from-gray-500 to-gray-600'} flex items-center justify-center text-white shadow-sm`}>
-              {categoryIcons[row.original.category] || <TrendingUp className="w-4 h-4" />}
-            </div>
+            <SourceLogo name={row.original.source_name} category={row.original.category} />
             <span className="text-sm font-semibold text-gray-900 dark:text-white">{row.original.source_name}</span>
           </div>
         ),
@@ -132,7 +231,7 @@ export default function IncomeTable({ incomes, onDelete }: IncomeTableProps) {
   const filteredData = useMemo(() => {
     let data = incomes
     if (categoryFilter) {
-      data = data.filter(d => d.category === categoryFilter)
+      data = data.filter(d => d.source_name === categoryFilter)
     }
     return data
   }, [incomes, categoryFilter])
@@ -150,7 +249,18 @@ export default function IncomeTable({ incomes, onDelete }: IncomeTableProps) {
     initialState: { pagination: { pageSize: 10 } },
   })
 
-  const categories = ['freelance', 'delivery', 'content', 'rideshare', 'tutoring', 'ecommerce']
+  // Get unique source names from actual data for filter tabs
+  const uniqueSources = useMemo(() => {
+    const seen = new Set<string>()
+    return incomes
+      .map((i) => ({ name: i.source_name, category: i.category }))
+      .filter((s) => {
+        if (seen.has(s.name)) return false
+        seen.add(s.name)
+        return true
+      })
+      .slice(0, 8) // max 8 tabs
+  }, [incomes])
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-card overflow-hidden">
@@ -181,16 +291,16 @@ export default function IncomeTable({ incomes, onDelete }: IncomeTableProps) {
             <TrendingUp className="w-3.5 h-3.5" />
             All Sources
           </motion.button>
-          {categories.map((cat) => {
-            const isActive = categoryFilter === cat
-            const gradient = categoryGradients[cat] || 'from-gray-500 to-gray-600'
-            const icon = categoryIcons[cat] || <TrendingUp className="w-3.5 h-3.5" />
+          {uniqueSources.map(({ name, category }) => {
+            const isActive = categoryFilter === name
+            const gradient = categoryGradients[category] || 'from-gray-500 to-gray-600'
+            const icon = categoryIcons[category] || <TrendingUp className="w-3.5 h-3.5" />
             return (
               <motion.button
-                key={cat}
+                key={name}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => setCategoryFilter(categoryFilter === cat ? '' : cat)}
+                onClick={() => setCategoryFilter(categoryFilter === name ? '' : name)}
                 className={cn(
                   'px-4 py-2 text-xs font-semibold rounded-xl transition-all duration-300 flex items-center gap-1.5 shadow-sm',
                   isActive 
@@ -199,7 +309,7 @@ export default function IncomeTable({ incomes, onDelete }: IncomeTableProps) {
                 )}
               >
                 {icon}
-                {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                {name}
               </motion.button>
             )
           })}

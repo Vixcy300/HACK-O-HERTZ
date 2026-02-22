@@ -140,9 +140,9 @@ async def upload_csv(file: UploadFile = File(...), user: dict = Depends(get_curr
         _seed_demo_incomes()
         _demo_incomes.extend(parsed)
     else:
-        from app.config import get_supabase
+        from app.config import get_supabase_admin
 
-        sb = get_supabase()
+        sb = get_supabase_admin()
         if parsed:
             sb.table("incomes").insert(parsed).execute()
 

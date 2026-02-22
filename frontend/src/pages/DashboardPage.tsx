@@ -76,7 +76,22 @@ export default function DashboardPage() {
   const [loadingMetrics, setLoadingMetrics] = useState(true)
   const [streaks, setStreaks] = useState(defaultStreaks)
   const { permission, requestPermission, showLocalNotification, sendTestEmail } = useNotifications()
-  const { isConnected, lastEvent, pendingClarifications, respondToClarification, dismissClarification } = useWebSocket()
+  const fetchMetrics = useCallback(async () => {
+    setLoadingMetrics(true)
+    try {
+      const data = await analyticsApi.dashboard()
+      setMetrics(data)
+    } catch (err) {
+      console.error('Failed to load dashboard metrics:', err)
+    } finally {
+      setLoadingMetrics(false)
+    }
+  }, [])
+
+  const { isConnected, lastEvent, pendingClarifications, respondToClarification, dismissClarification } = useWebSocket({
+    onIncomeAdded: fetchMetrics,
+    onExpenseAdded: fetchMetrics,
+  })
   const [smsAlerts, setSmsAlerts] = useState<SMSAlertEvent[]>([])
 
   // Collect incoming SMS alerts for the floating toast panel
@@ -116,19 +131,8 @@ export default function DashboardPage() {
 
   // Fetch real dashboard metrics from API
   useEffect(() => {
-    const fetchMetrics = async () => {
-      setLoadingMetrics(true)
-      try {
-        const data = await analyticsApi.dashboard()
-        setMetrics(data)
-      } catch (err) {
-        console.error('Failed to load dashboard metrics:', err)
-      } finally {
-        setLoadingMetrics(false)
-      }
-    }
     fetchMetrics()
-  }, [])
+  }, [fetchMetrics])
 
   useEffect(() => {
     // Fetch AI insights from backend
@@ -542,10 +546,17 @@ export default function DashboardPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.8 }}
-          className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl border border-indigo-200 p-6 shadow-card flex flex-col items-center justify-center"
+          className="bg-gradient-to-br from-gray-900 via-slate-900 to-gray-900 rounded-2xl border border-gray-700 p-6 shadow-xl flex flex-col items-center justify-center relative overflow-hidden"
         >
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Financial Health</h3>
-          <HealthScoreGauge score={calculateHealthScore()} size="lg" />
+          {/* subtle dot-grid overlay matching Spending Streaks card */}
+          <div
+            className="absolute inset-0 opacity-[0.04]"
+            style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '24px 24px' }}
+          />
+          <h3 className="text-lg font-semibold text-white mb-4 relative z-10">Financial Health</h3>
+          <div className="relative z-10">
+            <HealthScoreGauge score={calculateHealthScore()} size="lg" darkBg />
+          </div>
         </motion.div>
 
         <motion.div

@@ -111,6 +111,7 @@ async def get_current_user(
                         "email": email,
                         "full_name": user_data.get("full_name", "User"),
                         "is_demo": False,
+                        "is_local": True,  # authenticated via local file-based auth
                         "is_new_account": user_data.get("is_new_account", False),
                         "is_admin": user_data.get("is_admin", False),
                     }

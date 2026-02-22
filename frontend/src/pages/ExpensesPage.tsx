@@ -11,6 +11,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { expenseApi, analyticsApi } from '@/lib/api'
 import { useNotifications } from '@/lib/useNotifications'
+import { useWebSocket } from '@/lib/useWebSocket'
 import { useTranslation } from '@/lib/i18n'
 import { useAppStore, type CategoryLimits } from '@/store/useAppStore'
 import toast from 'react-hot-toast'
@@ -124,6 +125,9 @@ export default function ExpensesPage() {
       setLoading(false)
     }
   }, [])
+
+  // Refresh automatically when an SMS expense is added in real-time
+  useWebSocket({ onExpenseAdded: fetchExpenses })
 
   useEffect(() => {
     fetchExpenses()
@@ -284,29 +288,29 @@ export default function ExpensesPage() {
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-gradient-to-br from-amber-50 via-orange-50 to-amber-50 dark:from-amber-900/20 dark:via-orange-900/20 dark:to-amber-900/20 rounded-2xl border border-amber-200 dark:border-amber-700/50 p-5 shadow-lg shadow-amber-100/50 dark:shadow-none"
+        className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 shadow-sm"
       >
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 flex items-center justify-center shadow-md">
-              <TrendingDown className="w-5 h-5 text-white" />
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 flex items-center justify-center shadow-sm">
+              <TrendingDown className="w-4 h-4 text-white" />
             </div>
-            <h3 className="font-semibold text-gray-900 dark:text-white">{t('exp_category_limits')}</h3>
+            <h3 className="font-semibold text-gray-900 dark:text-white text-sm">{t('exp_category_limits')}</h3>
           </div>
           <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
             onClick={() => {
               setEditLimits(settings.categoryLimits)
               setShowLimitsModal(true)
             }}
-            className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white text-xs font-semibold rounded-xl transition-all shadow-md hover:shadow-lg"
+            className="flex items-center gap-1 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-700/50 text-xs font-semibold rounded-lg transition-all"
           >
-            <Edit3 className="w-3.5 h-3.5" />
+            <Edit3 className="w-3 h-3" />
             Edit Limits
           </motion.button>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-5 lg:grid-cols-10 gap-2">
           {expenseCategories.map((cat, index) => {
             const spent = currentSpending[cat.value] || 0
             const limit = categoryLimits[cat.value as keyof CategoryLimits] || 500
@@ -315,30 +319,28 @@ export default function ExpensesPage() {
             return (
               <motion.div 
                 key={cat.value} 
-                initial={{ opacity: 0, y: 10 }}
+                initial={{ opacity: 0, y: 5 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
-                className="bg-white/80 dark:bg-gray-800/80 rounded-xl p-3 backdrop-blur-sm border border-white dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow duration-200"
+                transition={{ delay: index * 0.03 }}
+                className="flex flex-col items-center gap-1 p-2 bg-gray-50 dark:bg-gray-700/50 rounded-xl border border-gray-100 dark:border-gray-700"
               >
-                <div className="flex items-center gap-2 mb-2">
-                  <div className={cn(
-                    'w-8 h-8 rounded-lg flex items-center justify-center text-lg',
-                    isOver ? 'bg-red-100 dark:bg-red-900/30' : pct > 70 ? 'bg-amber-100 dark:bg-amber-900/30' : 'bg-emerald-100 dark:bg-emerald-900/30'
-                  )}>
-                    {getCategoryIcon(cat.value)}
-                  </div>
-                  <span className="text-xs font-semibold text-gray-700 dark:text-gray-200">{cat.label}</span>
+                <div className={cn(
+                  'w-8 h-8 rounded-lg flex items-center justify-center text-base',
+                  isOver ? 'bg-red-100 dark:bg-red-900/30' : pct > 70 ? 'bg-amber-100 dark:bg-amber-900/30' : 'bg-emerald-100 dark:bg-emerald-900/30'
+                )}>
+                  {getCategoryIcon(cat.value)}
                 </div>
-                <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                <span className="text-[10px] font-medium text-gray-600 dark:text-gray-300 text-center leading-tight">{cat.label}</span>
+                <div className="w-full h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                   <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: `${pct}%` }}
                     transition={{ duration: 0.8, ease: "easeOut" }}
-                    className={cn('h-full rounded-full', isOver ? 'bg-gradient-to-r from-red-500 to-red-600' : pct > 70 ? 'bg-gradient-to-r from-amber-400 to-amber-500' : 'bg-gradient-to-r from-emerald-400 to-emerald-500')}
+                    className={cn('h-full rounded-full', isOver ? 'bg-red-500' : pct > 70 ? 'bg-amber-400' : 'bg-emerald-400')}
                   />
                 </div>
-                <p className={cn('text-xs mt-1.5 font-medium', isOver ? 'text-red-600 dark:text-red-400' : 'text-gray-600 dark:text-gray-400')}>
-                  {formatCurrency(spent)} / {formatCurrency(limit)}
+                <p className={cn('text-[10px] font-medium', isOver ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400')}>
+                  {formatCurrency(spent)}
                 </p>
               </motion.div>
             )
@@ -348,12 +350,12 @@ export default function ExpensesPage() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 shadow-lg">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-            <span className="w-8 h-8 rounded-lg bg-gradient-to-r from-red-500 to-pink-500 flex items-center justify-center text-white text-sm">📊</span>
+        <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 shadow-lg">
+          <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+            <span className="w-7 h-7 rounded-lg bg-gradient-to-r from-red-500 to-pink-500 flex items-center justify-center text-white text-xs">📊</span>
             {t('exp_recent')}
           </h3>
-          <div className="space-y-2">
+          <div className="divide-y divide-gray-100 dark:divide-gray-700">
             <AnimatePresence>
             {expenses.slice(0, 8).map((exp, index) => {
               const dirty = isDirtyExpense(exp)
@@ -363,45 +365,40 @@ export default function ExpensesPage() {
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: 10 }}
-                  transition={{ delay: index * 0.05 }}
-                  className={cn(
-                  'flex flex-col py-3 px-4 rounded-xl border transition-all duration-200 hover:shadow-md',
-                  dirty.isDirty 
-                    ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-700/50' 
-                    : 'bg-gray-50 dark:bg-gray-700/50 border-gray-100 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700'
-                )}>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
+                  transition={{ delay: index * 0.04 }}
+                  className="py-2.5 px-1 group"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
                       <div className={cn(
-                        'w-10 h-10 rounded-xl flex items-center justify-center text-xl shadow-sm',
-                        dirty.isDirty 
-                          ? 'bg-red-100 dark:bg-red-900/40' 
-                          : 'bg-white dark:bg-gray-600'
+                        'w-9 h-9 rounded-xl flex items-center justify-center text-lg flex-shrink-0',
+                        dirty.isDirty ? 'bg-red-100 dark:bg-red-900/40' : 'bg-gray-100 dark:bg-gray-700'
                       )}>
                         {getCategoryIcon(exp.category)}
                       </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <p className="text-sm font-semibold text-gray-900 dark:text-white">{exp.description || exp.category}</p>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{exp.description || exp.category}</p>
                           {dirty.isDirty && (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-gradient-to-r from-red-500 to-pink-500 text-white text-[10px] font-bold rounded-full shadow-sm">
+                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 text-[10px] font-bold rounded-md border border-red-200 dark:border-red-700/50">
                               <AlertTriangle className="w-2.5 h-2.5" />
                               DIRTY
                             </span>
                           )}
                         </div>
-                        <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                          <span>
-                            {new Date(exp.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })} · {exp.payment_method.toUpperCase()}
-                          </span>
-                          {dirty.isDirty && dirty.reason && (
-                            <span className="text-red-600 dark:text-red-400 font-semibold">· {dirty.reason}</span>
-                          )}
-                        </div>
+                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                          {new Date(exp.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })} · {exp.payment_method.toUpperCase()}
+                          {dirty.isDirty && dirty.reason && <span className="text-red-500 dark:text-red-400 ml-1">· {dirty.reason}</span>}
+                        </p>
+                        {dirty.isDirty && dirty.saveMessage && (
+                          <p className="text-[11px] text-orange-600 dark:text-orange-400 mt-0.5 flex items-center gap-1">
+                            💡 {dirty.saveMessage}
+                          </p>
+                        )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <span className={cn('font-bold', dirty.isDirty ? 'text-red-600 dark:text-red-400 text-base' : 'text-red-500 dark:text-red-400 text-sm')}>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <span className={cn('text-sm font-bold', dirty.isDirty ? 'text-red-600 dark:text-red-400' : 'text-red-500 dark:text-red-400')}>
                         -{formatCurrency(exp.amount)}
                       </span>
                       <motion.button
@@ -409,29 +406,16 @@ export default function ExpensesPage() {
                         whileTap={{ scale: 0.9 }}
                         onClick={() => handleDeleteExpense(exp.id)}
                         disabled={deleting === exp.id}
-                        className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-all duration-200 disabled:opacity-50"
-                        title="Delete expense"
+                        className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-all opacity-0 group-hover:opacity-100 disabled:opacity-50"
                       >
                         {deleting === exp.id ? (
-                          <RefreshCw className="w-4 h-4 animate-spin" />
+                          <RefreshCw className="w-3.5 h-3.5 animate-spin" />
                         ) : (
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-3.5 h-3.5" />
                         )}
                       </motion.button>
                     </div>
                   </div>
-                  {/* Save/Invest message for dirty expenses */}
-                  {dirty.isDirty && dirty.saveMessage && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      className="mt-2 ml-13 p-2.5 bg-gradient-to-r from-red-100 to-pink-100 dark:from-red-900/30 dark:to-pink-900/30 rounded-lg border border-red-200 dark:border-red-700/50"
-                    >
-                      <p className="text-xs text-red-700 dark:text-red-300 font-medium flex items-center gap-1.5">
-                        💡 {dirty.saveMessage}
-                      </p>
-                    </motion.div>
-                  )}
                 </motion.div>
               )
             })}

@@ -43,6 +43,7 @@ export interface SMSAlertEvent {
   needs_clarification: boolean
   is_dirty_spend: boolean
   auto_category: string
+  ai_spending_insight?: string
 }
 
 export interface ClarificationNeededEvent {
@@ -54,6 +55,10 @@ export interface ClarificationNeededEvent {
   risk_score: number
   message: string
   suggested_categories: string[]
+  // AI-enriched fields (from Groq, present when merchant is unclear UPI)
+  ai_message?: string
+  spending_insight?: string
+  ai_confidence?: number
 }
 
 export interface IncomeAddedEvent {
@@ -136,9 +141,12 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
               options.onSMSAlert?.(e)
               // Show toast notification
               if (e.risk_level === 'critical' || e.risk_level === 'high_risk') {
-                toast.error(`🚨 ${e.alert_message}`, { duration: 8000 })
+                const insight = e.ai_spending_insight ? `\n💡 ${e.ai_spending_insight}` : ''
+                toast.error(`🚨 ${e.alert_message}${insight}`, { duration: 8000 })
               } else if (e.risk_level === 'warning') {
                 toast(`💡 ${e.alert_message}`, { duration: 5000 })
+              } else if (e.transaction_type === 'credit') {
+                toast.success(`💰 ₹${e.amount.toLocaleString('en-IN')} received${e.merchant ? ` from ${e.merchant}` : ''}`, { duration: 4000 })
               }
               break
             }

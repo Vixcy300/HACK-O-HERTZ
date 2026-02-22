@@ -31,7 +31,11 @@ def _load_data(user_id: str, data_type: str) -> List[dict]:
     if not file_path.exists():
         return []
     try:
-        return json.loads(file_path.read_text())
+        data = json.loads(file_path.read_text(encoding='utf-8'))
+        # Guard: if file contains a single dict (not a list), wrap it
+        if isinstance(data, dict):
+            return [data]
+        return data if isinstance(data, list) else []
     except (json.JSONDecodeError, FileNotFoundError):
         return []
 
@@ -40,7 +44,7 @@ def _save_data(user_id: str, data_type: str, data: List[dict]):
     """Save user's data to JSON file."""
     file_path = _get_user_file(user_id, data_type)
     _ensure_data_dir()
-    file_path.write_text(json.dumps(data, indent=2))
+    file_path.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding='utf-8')
 
 
 # ==================== INCOMES ====================

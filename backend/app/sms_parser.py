@@ -74,7 +74,12 @@ _BAL_PATTERN = re.compile(
 
 # UPI VPA / merchant
 _UPI_PATTERN = re.compile(
-    r'(?:UPI/|UPI\s+(?:ref\s+to\s+)?|to\s+UPI[:/]?\s*)'
+    r'(?:'
+    r'UPI/|'                                         # UPI/<VPA>
+    r'UPI\s+(?:ref\s+to\s+)?(?=\S)|'               # UPI ref to <VPA> or UPI <VPA>
+    r'to\s+UPI[:/]?\s*|'                            # to UPI: <VPA>
+    r'(?:via\s+)?UPI\s+to\s+'                       # via UPI to <VPA>  ← new
+    r')'
     r'([A-Za-z0-9._@-]{3,50})',
     re.IGNORECASE
 )
@@ -182,13 +187,13 @@ def _extract_merchant(sms: str, mode: str) -> Optional[str]:
     upi_match = _UPI_PATTERN.search(sms)
     if upi_match:
         vpa = upi_match.group(1).strip()
-        # Extract name before '@' in UPI VPA
+        # Return the full VPA (e.g. 9841234567@ybl) so our unclear-detection catches it
         if '@' in vpa:
             name = vpa.split('@')[0]
-            # Remove numbers from name
-            name = re.sub(r'\d', '', name).strip('-').strip('.')
-            if len(name) > 2:
-                return name.upper()
+            name_clean = re.sub(r'\d', '', name).strip('-').strip('.')
+            if len(name_clean) > 2:
+                return name_clean.upper()  # real merchant name like ZOMATO
+            return vpa  # keep full VPA (phone number VPA) so regex flags it
         return vpa.upper()
 
     # "to MERCHANT" pattern

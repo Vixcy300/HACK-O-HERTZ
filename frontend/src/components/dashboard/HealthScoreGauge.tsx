@@ -5,9 +5,10 @@ interface HealthScoreGaugeProps {
   score: number // 0-100
   label?: string
   size?: 'sm' | 'md' | 'lg'
+  darkBg?: boolean  // render over a dark background
 }
 
-export default function HealthScoreGauge({ score, label = 'Health Score', size = 'md' }: HealthScoreGaugeProps) {
+export default function HealthScoreGauge({ score, label = 'Health Score', size = 'md', darkBg = false }: HealthScoreGaugeProps) {
   const normalizedScore = Math.min(100, Math.max(0, score))
   
   // Calculate color based on score
@@ -49,7 +50,7 @@ export default function HealthScoreGauge({ score, label = 'Health Score', size =
             cy={config.width / 2}
             r={radius}
             fill="none"
-            stroke="#E5E7EB"
+            stroke={darkBg ? 'rgba(255,255,255,0.12)' : '#E5E7EB'}
             strokeWidth={config.strokeWidth}
           />
           {/* Progress arc */}
@@ -78,7 +79,7 @@ export default function HealthScoreGauge({ score, label = 'Health Score', size =
           >
             {normalizedScore}
           </motion.span>
-          <span className="text-[10px] text-gray-400 uppercase tracking-wide">{label}</span>
+          <span className={`text-[10px] uppercase tracking-wide ${darkBg ? 'text-gray-400' : 'text-gray-400'}`}>{label}</span>
         </div>
       </div>
       

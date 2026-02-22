@@ -90,6 +90,7 @@ export interface SavingsGoal {
   icon: string
   is_active: boolean
   monthly_contribution: number
+  track_product?: string | null
   created_at: string
 }
 

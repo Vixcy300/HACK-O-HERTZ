@@ -22,6 +22,8 @@ import { useTranslation, localeNames, type Locale } from '@/lib/i18n'
 import { useAppStore, type UserSettings } from '@/store/useAppStore'
 import { whatsappApi } from '@/lib/api'
 
+const API_BASE = import.meta.env.VITE_API_URL || '/api'
+
 const fadeUp = {
   initial: { opacity: 0, y: 20 },
   animate: { opacity: 1, y: 0 },
@@ -39,11 +41,33 @@ export default function SettingsPage() {
     setLocal(settings)
   }, [settings])
 
-  const handleSave = () => {
+  const handleSave = async () => {
     updateSettings(local)
     setSaved(true)
     toast.success(t('settings_saved'))
     setTimeout(() => setSaved(false), 2000)
+
+    // Persist phone number to backend profile & auto-register for SMS routing
+    if (local.phoneNumber !== undefined) {
+      try {
+        const token = localStorage.getItem('access_token')
+        if (token) {
+          await fetch(`${API_BASE}/auth/profile`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ phone_number: local.phoneNumber }),
+          })
+          if (local.phoneNumber.trim()) {
+            await fetch(
+              `${API_BASE}/sms/register-device?phone=${encodeURIComponent(local.phoneNumber.trim())}`,
+              { method: 'POST', headers: { Authorization: `Bearer ${token}` } },
+            )
+          }
+        }
+      } catch {
+        // silently ignore — settings are still saved locally
+      }
+    }
   }
 
   const handleTestWhatsApp = async () => {
@@ -199,6 +223,26 @@ export default function SettingsPage() {
               />
             </div>
           </div>
+        </div>
+
+        {/* Phone number for SMS routing */}
+        <div className="mt-4">
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            <div className="flex items-center gap-1.5">
+              <Smartphone className="w-4 h-4" />
+              Phone Number <span className="text-xs text-gray-400 font-normal">(for automatic SMS sync)</span>
+            </div>
+          </label>
+          <input
+            type="tel"
+            placeholder="+91 96007 00120"
+            value={local.phoneNumber || ''}
+            onChange={(e) => setLocal({ ...local, phoneNumber: e.target.value })}
+            className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary-300 focus:border-primary-400"
+          />
+          <p className="text-xs text-gray-400 mt-1">
+            SMS from this number will be automatically routed to your account.
+          </p>
         </div>
       </motion.div>
 

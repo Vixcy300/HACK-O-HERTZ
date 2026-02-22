@@ -125,6 +125,8 @@ class GoalCreate(BaseModel):
     target_date: date
     icon: str = "piggy-bank"
     monthly_contribution: float = Field(ge=0, default=0)
+    # Optional product tracking (e.g. "iPhone 15", "Samsung S24")
+    track_product: str | None = Field(default=None, max_length=200)
 
 
 class AddMoneyRequest(BaseModel):

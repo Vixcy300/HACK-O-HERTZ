@@ -130,7 +130,7 @@ def validate_email(email: str) -> tuple[bool, str]:
     return True, ""
 
 
-def signup(email: str, password: str, full_name: str) -> dict:
+def signup(email: str, password: str, full_name: str, phone_number: str = "") -> dict:
     """
     Create a new user account.
     Returns user data and token on success.
@@ -173,6 +173,7 @@ def signup(email: str, password: str, full_name: str) -> dict:
         "password_salt": salt,
         "created_at": datetime.utcnow().isoformat(),
         "is_new_account": True,  # Flag for empty data
+        "phone_number": phone_number.strip() if phone_number else "",
     }
     
     _save_users(users)
@@ -292,3 +293,31 @@ def ensure_admin_user():
             print(f"✅ Admin user updated: {admin_email}")
     
     return users[admin_email]
+
+
+def update_user_phone(email: str, phone: str) -> bool:
+    """Save or update phone number in user profile. Returns True on success."""
+    email = email.lower().strip()
+    users = _load_users()
+    if email not in users:
+        return False
+    users[email]["phone_number"] = phone.strip()
+    _save_users(users)
+    return True
+
+
+def get_user_phone(email: str) -> str:
+    """Return the phone number for a user, or empty string."""
+    email = email.lower().strip()
+    users = _load_users()
+    return users.get(email, {}).get("phone_number", "")
+
+
+def get_all_users_with_phones() -> list:
+    """Return [{user_id, phone}] for every user that has a phone number stored."""
+    users = _load_users()
+    return [
+        {"user_id": u["id"], "phone": u["phone_number"]}
+        for u in users.values()
+        if u.get("phone_number", "").strip()
+    ]

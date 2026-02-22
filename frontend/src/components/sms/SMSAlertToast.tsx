@@ -1,15 +1,9 @@
 /**
- * SMSAlertModal
+ * SMSAlertToast — compact live-alert card, theme-aware.
  *
- * Floating live-alert panel that appears in the bottom-right corner
- * whenever a new bank SMS is received via the WebSocket.
- *
- * Shows:
- *  - Transaction type (credit/debit) with icon
- *  - Amount and merchant
- *  - Risk level badge (safe / warning / high_risk / critical)
- *  - Alert message + suggestion from AI
- *  - "Categorize" CTA if the transaction needs clarification
+ * Shows the latest transaction in a slim card (bottom-right).
+ * One card at a time; navigate with arrows if multiple are queued.
+ * Fully respects light / dark theme.
  */
 
 import { useState } from 'react'
@@ -22,6 +16,8 @@ import {
   ShieldCheck,
   ShieldAlert,
   Zap,
+  ChevronLeft,
+  ChevronRight,
   MessageSquare,
 } from 'lucide-react'
 import type { SMSAlertEvent } from '@/lib/useWebSocket'
@@ -33,155 +29,175 @@ interface SMSAlertToastProps {
   onCategorize: (alert: SMSAlertEvent) => void
 }
 
+// Theme-aware risk config — no hardcoded dark backgrounds
 const RISK_CONFIG = {
   safe: {
-    bg: 'bg-emerald-950/90',
-    border: 'border-emerald-500/40',
-    badge: 'bg-emerald-500/20 text-emerald-300',
+    border: 'border-emerald-200 dark:border-emerald-500/30',
+    badge: 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300',
+    bar: 'bg-emerald-500',
+    stripe: 'bg-emerald-500',
     icon: ShieldCheck,
-    iconColor: 'text-emerald-400',
+    iconColor: 'text-emerald-600 dark:text-emerald-400',
     label: 'Safe',
   },
   warning: {
-    bg: 'bg-yellow-950/90',
-    border: 'border-yellow-500/40',
-    badge: 'bg-yellow-500/20 text-yellow-300',
+    border: 'border-yellow-300 dark:border-yellow-500/30',
+    badge: 'bg-yellow-100 dark:bg-yellow-500/20 text-yellow-700 dark:text-yellow-300',
+    bar: 'bg-yellow-500',
+    stripe: 'bg-yellow-500',
     icon: AlertTriangle,
-    iconColor: 'text-yellow-400',
+    iconColor: 'text-yellow-600 dark:text-yellow-400',
     label: 'Watch Out',
   },
   high_risk: {
-    bg: 'bg-orange-950/90',
-    border: 'border-orange-500/40',
-    badge: 'bg-orange-500/20 text-orange-300',
+    border: 'border-orange-300 dark:border-orange-500/30',
+    badge: 'bg-orange-100 dark:bg-orange-500/20 text-orange-700 dark:text-orange-300',
+    bar: 'bg-orange-500',
+    stripe: 'bg-orange-500',
     icon: ShieldAlert,
-    iconColor: 'text-orange-400',
+    iconColor: 'text-orange-600 dark:text-orange-400',
     label: 'High Risk',
   },
   critical: {
-    bg: 'bg-red-950/90',
-    border: 'border-red-500/40',
-    badge: 'bg-red-500/20 text-red-300',
+    border: 'border-red-300 dark:border-red-500/30',
+    badge: 'bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-300',
+    bar: 'bg-red-500',
+    stripe: 'bg-red-500',
     icon: Zap,
-    iconColor: 'text-red-400',
+    iconColor: 'text-red-600 dark:text-red-400',
     label: 'Critical',
   },
 }
 
-function SMSAlertCard({
-  alert,
-  onDismiss,
-  onCategorize,
-}: {
-  alert: SMSAlertEvent
-  onDismiss: (id: string) => void
-  onCategorize: (a: SMSAlertEvent) => void
-}) {
-  const config = RISK_CONFIG[alert.risk_level] ?? RISK_CONFIG.warning
+export default function SMSAlertToast({ alerts, onDismiss, onCategorize }: SMSAlertToastProps) {
+  const [idx, setIdx] = useState(0)
+
+  const total = alerts.length
+  if (total === 0) return null
+
+  // Newest alert first
+  const safeIdx = Math.min(idx, total - 1)
+  const alert = alerts[total - 1 - safeIdx]
+  const config = RISK_CONFIG[alert.risk_level as keyof typeof RISK_CONFIG] ?? RISK_CONFIG.warning
   const RiskIcon = config.icon
   const isCredit = alert.transaction_type === 'credit'
 
   return (
-    <motion.div
-      initial={{ opacity: 0, x: 80, scale: 0.9 }}
-      animate={{ opacity: 1, x: 0, scale: 1 }}
-      exit={{ opacity: 0, x: 80, scale: 0.9 }}
-      className={`relative w-80 rounded-2xl border backdrop-blur-xl p-4 shadow-2xl ${config.bg} ${config.border}`}
-    >
-      {/* Close button */}
-      <button
-        onClick={() => onDismiss(alert.sms_id)}
-        className="absolute top-3 right-3 p-1 rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition-colors"
-      >
-        <X size={14} />
-      </button>
-
-      {/* Header */}
-      <div className="flex items-start gap-3 mb-3">
-        <div className={`p-2 rounded-xl ${isCredit ? 'bg-emerald-500/20' : 'bg-red-500/20'}`}>
-          {isCredit ? (
-            <TrendingUp size={18} className="text-emerald-400" />
-          ) : (
-            <TrendingDown size={18} className="text-red-400" />
-          )}
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${config.badge}`}>
-              {config.label}
-            </span>
-            <span className="text-xs text-white/40">{alert.transaction_mode}</span>
-          </div>
-          <p className="text-white font-bold text-lg leading-tight mt-0.5">
-            {isCredit ? '+' : '-'}{formatCurrency(alert.amount)}
-          </p>
-          {alert.merchant && (
-            <p className="text-white/60 text-xs truncate">{alert.merchant}</p>
-          )}
-        </div>
-        <RiskIcon size={18} className={config.iconColor} />
-      </div>
-
-      {/* Risk score bar */}
-      <div className="mb-3">
-        <div className="flex justify-between text-xs text-white/40 mb-1">
-          <span>Risk Score</span>
-          <span className={config.iconColor}>{alert.risk_score.toFixed(0)}/100</span>
-        </div>
-        <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
-          <div
-            className={`h-full rounded-full transition-all ${
-              alert.risk_score >= 80
-                ? 'bg-red-500'
-                : alert.risk_score >= 60
-                ? 'bg-orange-500'
-                : alert.risk_score >= 30
-                ? 'bg-yellow-500'
-                : 'bg-emerald-500'
-            }`}
-            style={{ width: `${alert.risk_score}%` }}
-          />
-        </div>
-      </div>
-
-      {/* Message */}
-      <p className="text-white/80 text-xs leading-relaxed mb-3">{alert.alert_message}</p>
-
-      {/* Bank info */}
-      {alert.bank_name && (
-        <p className="text-white/30 text-xs mb-3">via {alert.bank_name}</p>
-      )}
-
-      {/* Action: categorize */}
-      {alert.needs_clarification && (
-        <button
-          onClick={() => onCategorize(alert)}
-          className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-violet-500/20 border border-violet-500/30 text-violet-300 text-xs font-medium hover:bg-violet-500/30 transition-colors"
+    <div className="fixed bottom-5 right-5 z-[9999] w-72">
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={alert.sms_id}
+          initial={{ opacity: 0, y: 16, scale: 0.96 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 16, scale: 0.96 }}
+          transition={{ type: 'spring', stiffness: 340, damping: 28 }}
+          className={`rounded-2xl border shadow-lg bg-white dark:bg-[#1a1d27] ${config.border}`}
         >
-          <MessageSquare size={12} />
-          What did you spend this on?
-        </button>
-      )}
-    </motion.div>
-  )
-}
+          {/* Colored top stripe */}
+          <div className={`h-1 rounded-t-2xl ${config.stripe}`} />
 
-export default function SMSAlertToast({ alerts, onDismiss, onCategorize }: SMSAlertToastProps) {
-  // Show max 3 alerts at once
-  const visible = alerts.slice(-3)
+          <div className="p-3.5">
+            {/* Header row */}
+            <div className="flex items-start justify-between mb-2">
+              <div className="flex items-center gap-2.5">
+                <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                  isCredit ? 'bg-emerald-100 dark:bg-emerald-500/15' : 'bg-red-100 dark:bg-red-500/15'
+                }`}>
+                  {isCredit
+                    ? <TrendingUp size={15} className="text-emerald-600 dark:text-emerald-400" />
+                    : <TrendingDown size={15} className="text-red-600 dark:text-red-400" />}
+                </div>
+                <div>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className={`text-[11px] px-1.5 py-0.5 rounded-full font-semibold ${config.badge}`}>
+                      {config.label}
+                    </span>
+                    {alert.transaction_mode && (
+                      <span className="text-[10px] text-gray-400 dark:text-gray-500">{alert.transaction_mode}</span>
+                    )}
+                  </div>
+                  <p className={`font-bold text-base leading-snug mt-0.5 ${
+                    isCredit ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'
+                  }`}>
+                    {isCredit ? '+' : '-'}{formatCurrency(alert.amount)}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5 flex-shrink-0">
+                <RiskIcon size={14} className={config.iconColor} />
+                <button
+                  onClick={() => onDismiss(alert.sms_id)}
+                  className="p-1 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
+                >
+                  <X size={13} />
+                </button>
+              </div>
+            </div>
 
-  return (
-    <div className="fixed bottom-6 right-6 z-[9999] flex flex-col gap-3 pointer-events-none">
-      <AnimatePresence>
-        {visible.map((alert) => (
-          <div key={alert.sms_id} className="pointer-events-auto">
-            <SMSAlertCard
-              alert={alert}
-              onDismiss={onDismiss}
-              onCategorize={onCategorize}
-            />
+            {/* Merchant + bank */}
+            {(alert.merchant || alert.bank_name) && (
+              <p className="text-gray-500 dark:text-gray-400 text-[11px] truncate mb-2">
+                {[alert.merchant, alert.bank_name].filter(Boolean).join(' · ')}
+              </p>
+            )}
+
+            {/* Risk bar */}
+            <div className="mb-2.5">
+              <div className="flex justify-between text-[10px] text-gray-400 dark:text-gray-500 mb-1">
+                <span>Risk score</span>
+                <span>{alert.risk_score.toFixed(0)}/100</span>
+              </div>
+              <div className="h-1 bg-gray-100 dark:bg-white/10 rounded-full overflow-hidden">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${alert.risk_score}%` }}
+                  transition={{ duration: 0.5, ease: 'easeOut' }}
+                  className={`h-full rounded-full ${config.bar}`}
+                />
+              </div>
+            </div>
+
+            {/* Alert message */}
+            <p className="text-gray-600 dark:text-gray-300 text-[11px] leading-relaxed mb-3 line-clamp-2">
+              {alert.alert_message}
+            </p>
+
+            {/* Footer */}
+            <div className="flex items-center gap-2">
+              {alert.needs_clarification && (
+                <button
+                  onClick={() => onCategorize(alert)}
+                  className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-xl bg-violet-50 dark:bg-violet-500/15 border border-violet-200 dark:border-violet-500/30 text-violet-700 dark:text-violet-300 text-[11px] font-medium hover:bg-violet-100 dark:hover:bg-violet-500/25 transition-colors"
+                >
+                  <MessageSquare size={11} />
+                  What did you spend on?
+                </button>
+              )}
+
+              {total > 1 && (
+                <div className="flex items-center gap-0.5 ml-auto">
+                  <button
+                    disabled={safeIdx === total - 1}
+                    onClick={() => setIdx(i => Math.min(i + 1, total - 1))}
+                    className="p-1 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 disabled:opacity-30 transition-colors"
+                  >
+                    <ChevronLeft size={13} />
+                  </button>
+                  <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium w-8 text-center">
+                    {safeIdx + 1}/{total}
+                  </span>
+                  <button
+                    disabled={safeIdx === 0}
+                    onClick={() => setIdx(i => Math.max(i - 1, 0))}
+                    className="p-1 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 disabled:opacity-30 transition-colors"
+                  >
+                    <ChevronRight size={13} />
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
-        ))}
+        </motion.div>
       </AnimatePresence>
     </div>
   )

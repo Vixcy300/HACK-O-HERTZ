@@ -8,7 +8,7 @@ export default function AppLayout() {
   const { settings } = useAppStore()
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#111111]">
+    <div className={cn("flex h-screen overflow-hidden", settings.darkMode ? "bg-[#111111]" : "bg-gray-50")}>
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header />

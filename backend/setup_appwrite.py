@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 """
 Appwrite Database Setup for Incomiq
 =====================================

@@ -7,6 +7,7 @@ import CSVUploadZone from '@/components/income/CSVUploadZone'
 import AddIncomeModal from '@/components/income/AddIncomeModal'
 import { incomeApi } from '@/lib/api'
 import { useAppStore } from '@/store/useAppStore'
+import { useWebSocket } from '@/lib/useWebSocket'
 import type { Income, Expense } from '@/types'
 import toast from 'react-hot-toast'
 
@@ -31,6 +32,9 @@ export default function IncomePage() {
       setLoading(false)
     }
   }, [])
+
+  // Refresh automatically when an SMS income is added in real-time
+  useWebSocket({ onIncomeAdded: fetchIncomes })
 
   useEffect(() => {
     fetchIncomes()

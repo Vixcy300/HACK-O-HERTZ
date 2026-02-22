@@ -543,3 +543,91 @@ Respond naturally as a helpful financial assistant:"""
             "response": f"Sorry, I couldn't process your request. Error: {str(e)}",
             "language": language,
         }
+
+
+async def ai_classify_sms(
+    sms_content: str,
+    amount: float,
+    merchant: str,
+    transaction_mode: str = "UPI",
+) -> dict:
+    """
+    Use Groq to classify an unclear SMS transaction and generate a user-friendly
+    clarification message. Used when merchant is unknown (UPI to individual phone).
+
+    Returns:
+        category: best-guess category key
+        ai_message: conversational question to ask the user
+        suggested_categories: ordered list of up to 6 likely categories with emoji labels
+        confidence: 0.0-1.0 confidence in the auto-category
+        is_dirty_spend: whether this looks like non-essential spending
+        spending_insight: short AI insight about this transaction
+    """
+    CATEGORIES = [
+        "🍕 Food / Dining", "🛒 Groceries", "🚗 Transport / Fuel",
+        "💊 Healthcare", "📚 Education / Exam Fee", "💡 Electricity / Bills",
+        "📱 Mobile Recharge", "🏠 Rent / Maintenance", "👗 Shopping / Clothes",
+        "🎮 Entertainment", "💰 Savings / Investment", "🏦 Bank Transfer",
+        "🧾 Other",
+    ]
+
+    fallback = {
+        "category": "other",
+        "ai_message": f"You just spent ₹{amount:,.0f} via {transaction_mode}. What was this for?",
+        "suggested_categories": CATEGORIES[:6],
+        "confidence": 0.3,
+        "is_dirty_spend": False,
+        "spending_insight": f"₹{amount:,.0f} transaction detected.",
+    }
+
+    if not client:
+        return fallback
+
+    prompt = f"""You are Incomiq AI, a smart personal finance assistant for Indian users.
+
+A bank SMS was received with these details:
+- Amount: ₹{amount:,.0f}
+- Payment Mode: {transaction_mode}
+- Merchant/Recipient: {merchant or 'Unknown (UPI to phone number)'}
+- SMS Content: "{sms_content}"
+
+Task: Since the recipient is unclear (likely a UPI payment to an individual), help the user categorize it.
+
+Return ONLY a valid JSON object with these exact keys:
+{{
+  "category": "<one of: food, groceries, transport, healthcare, education, utilities, bills, rent, shopping, entertainment, other>",
+  "ai_message": "<friendly 1-sentence question asking what they bought, mentioning the amount — be conversational, like a smart friend>",
+  "suggested_categories": ["<emoji + label 1>", "<emoji + label 2>", "<emoji + label 3>", "<emoji + label 4>", "<emoji + label 5>", "<emoji + label 6>"],
+  "confidence": <0.0 to 1.0>,
+  "is_dirty_spend": <true if food delivery/entertainment/shopping, false otherwise>,
+  "spending_insight": "<one sharp insight about this spend — e.g. 'Looks like a food delivery spend — you've ordered 3 times this week already!'>"
+}}
+
+Base the suggested_categories on the most likely reasons for this payment amount and mode.
+For ₹{amount:,.0f} via {transaction_mode}, think about what's most likely.
+Return ONLY valid JSON."""
+
+    try:
+        resp = _chat_completion(
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.4,
+            max_tokens=400,
+        )
+        raw = resp.choices[0].message.content.strip()
+        # Strip markdown code blocks if present
+        if raw.startswith("```"):
+            raw = raw.split("```")[1]
+            if raw.startswith("json"):
+                raw = raw[4:]
+        result = json.loads(raw.strip())
+        # Ensure required keys
+        return {
+            "category": result.get("category", "other"),
+            "ai_message": result.get("ai_message", fallback["ai_message"]),
+            "suggested_categories": result.get("suggested_categories", CATEGORIES[:6]),
+            "confidence": float(result.get("confidence", 0.4)),
+            "is_dirty_spend": bool(result.get("is_dirty_spend", False)),
+            "spending_insight": result.get("spending_insight", ""),
+        }
+    except Exception:
+        return fallback

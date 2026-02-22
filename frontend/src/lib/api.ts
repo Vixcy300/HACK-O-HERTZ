@@ -92,11 +92,26 @@ export const rulesApi = {
 // ──── Savings Goals ────
 export const goalsApi = {
   list: () => request<{ goals: any[] }>('/goals'),
-  create: (data: any) => request<any>('/goals', { method: 'POST', body: JSON.stringify(data) }),
+  create: (data: {
+    name: string
+    target_amount: number
+    target_date: string
+    icon: string
+    monthly_contribution: number
+    track_product?: string | null
+  }) => request<any>('/goals', { method: 'POST', body: JSON.stringify(data) }),
   update: (id: string, data: any) => request<any>(`/goals/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   delete: (id: string) => request<void>(`/goals/${id}`, { method: 'DELETE' }),
   addMoney: (id: string, amount: number) =>
     request<any>(`/goals/${id}/add-money`, { method: 'POST', body: JSON.stringify({ amount }) }),
+  productPriceByQuery: (q: string) =>
+    request<{ product: string; price: number | null; currency: string; note: string; trend: string }>(
+      `/goals/product-price?q=${encodeURIComponent(q)}`
+    ),
+  goalProductPrice: (id: string) =>
+    request<{ product: string; price: number | null; currency: string; note: string; trend: string; goal_target: number; difference: number }>(
+      `/goals/${id}/product-price`
+    ),
 }
 
 // ──── Dashboard / Analytics ────
@@ -120,6 +135,17 @@ export const investmentApi = {
   submitQuiz: (answers: any) =>
     request<any>('/investments/risk-quiz', { method: 'POST', body: JSON.stringify(answers) }),
   sectors: () => request<any>('/investments/sectors'),
+}
+
+// ──── Stocks (Beyond Charts integration) ────
+export const stocksApi = {
+  symbols: () => request<{ symbols: Array<{ symbol: string; name: string; sector: string }>; grouped?: Record<string, Array<{ symbol: string; name: string; sector: string }>>; categories?: string[] }>('/stocks/symbols'),
+  quote: (symbol: string) => request<any>(`/stocks/quote?symbol=${symbol}`),
+  chart: (symbol: string, period = '3mo', interval = '1d') =>
+    request<any>(`/stocks/chart?symbol=${symbol}&period=${period}&interval=${interval}`),
+  signal: (symbol: string) => request<any>(`/stocks/signal?symbol=${symbol}`),
+  news: (symbol: string) => request<any>(`/stocks/news?symbol=${symbol}`),
+  index: () => request<any>('/stocks/index'),
 }
 
 // ──── Transactions (Combined CSV Upload) ────

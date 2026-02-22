@@ -22,6 +22,7 @@ export interface UserSettings {
   pushAlerts: boolean
   whatsappAlerts: boolean
   whatsappNumber: string
+  phoneNumber: string   // phone for SMS auto-routing
   overspendAlerts: boolean
   savingsReminders: boolean
   goalNotifications: boolean
@@ -49,8 +50,7 @@ const defaultSettings: UserSettings = {
   emailAlerts: true,
   pushAlerts: true,
   whatsappAlerts: false,
-  whatsappNumber: '',
-  overspendAlerts: true,
+  whatsappNumber: '',  phoneNumber: '',  overspendAlerts: true,
   savingsReminders: true,
   goalNotifications: true,
   darkMode: false,

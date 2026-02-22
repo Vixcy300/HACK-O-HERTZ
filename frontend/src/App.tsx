@@ -16,6 +16,7 @@ import AIChatPage from '@/pages/AIChatPage'
 import SettingsPage from '@/pages/SettingsPage'
 import AdminDashboardPage from '@/pages/AdminDashboardPage'
 import SMSAlertsPage from '@/pages/SMSAlertsPage'
+import StocksPage from '@/pages/StocksPage'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -71,6 +72,7 @@ function App() {
             <Route path="investments" element={<InvestmentsPage />} />
             <Route path="ai-chat" element={<AIChatPage />} />
             <Route path="sms-alerts" element={<SMSAlertsPage />} />
+            <Route path="stocks" element={<StocksPage />} />
             <Route path="settings" element={<SettingsPage />} />
             <Route path="admin" element={<AdminDashboardPage />} />
           </Route>
